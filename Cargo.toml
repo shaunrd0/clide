@@ -5,9 +5,19 @@ edition = "2024"
 
 [dependencies]
 cxx = "1.0.95"
-cxx-qt = "0.7"
-cxx-qt-lib = { version="0.7", features = ["qt_full"] }
+cxx-qt = "0.8.0"
+cxx-qt-lib = { version = "0.8.0", features = ["qt_full", "qt_gui", "qt_qml"] }
+log = { version = "0.4.27", features = [] }
+dirs = "6.0.0"
+syntect = "5.2.0"
+clap = { version = "4.5.54", features = ["derive"] }
+ratatui = "0.30.0"
+anyhow = "1.0.100"
+tui-tree-widget = "0.24.0"
+tui-logger = "0.18.1"
+edtui = "0.11.1"
+strum = "0.27.2"
 
 [build-dependencies]
 # The link_qt_object_files feature is required for statically linking Qt 6.
-cxx-qt-build = { version = "0.7", features = [ "link_qt_object_files" ] }
+cxx-qt-build = { version = "0.8.0", features = ["link_qt_object_files"] }

@@ -1,90 +1,65 @@
-// SPDX-FileCopyrightText: 2025 Klarälvdalens Datakonsult AB, a KDAB Group company <info@kdab.com>
-// SPDX-FileContributor: Leon Matthes <leon.matthes@kdab.com>
-//
-// SPDX-License-Identifier: MIT OR Apache-2.0
+use crate::tui::Tui;
+use anyhow::{Context, Result};
+use clap::Parser;
+use log::{info, trace};
+use std::process::{Command, Stdio};
 
-#[cxx_qt::bridge]
-mod qobject {
-    unsafe extern "C++" {
-        include!("cxx-qt-lib/qstring.h");
-        type QString = cxx_qt_lib::QString;
-    }
+pub mod gui;
+pub mod tui;
+/// Extendable command-line driven development environment written in Rust using the Qt UI framework.
+/// If no flags are provided, the GUI editor is launched in a separate process.
+/// If no path is provided, the current directory is used.
+#[derive(Parser, Debug)]
+#[structopt(name = "clide", verbatim_doc_comment)]
+struct Cli {
+    /// The root directory for the project to open with the clide editor.
+    #[arg(value_parser = clap::value_parser!(std::path::PathBuf))]
+    pub path: Option<std::path::PathBuf>,
 
-    #[qenum(Greeter)]
-    pub enum Language {
-        English,
-        German,
-        French,
-    }
+    /// Run clide in headless mode.
+    #[arg(value_name = "tui", short, long)]
+    pub tui: bool,
 
-    #[qenum(Greeter)]
-    pub enum Greeting {
-        Hello,
-        Bye,
-    }
-
-    unsafe extern "RustQt" {
-        #[qobject]
-        #[qml_element]
-        #[qproperty(Greeting, greeting)]
-        #[qproperty(Language, language)]
-        type Greeter = super::GreeterRust;
-
-        #[qinvokable]
-        fn greet(self: &Greeter) -> QString;
-    }
+    /// Run the clide GUI in the current process, blocking the terminal and showing all output streams.
+    #[arg(value_name = "gui", short, long)]
+    pub gui: bool,
 }
 
-use qobject::*;
+fn main() -> Result<()> {
+    let args = Cli::parse();
 
-impl Greeting {
-    fn translate(&self, language: Language) -> String {
-        match (self, language) {
-            (&Greeting::Hello, Language::English) => "Hello, World!",
-            (&Greeting::Hello, Language::German) => "Hallo, Welt!",
-            (&Greeting::Hello, Language::French) => "Bonjour, le monde!",
-            (&Greeting::Bye, Language::English) => "Bye!",
-            (&Greeting::Bye, Language::German) => "Auf Wiedersehen!",
-            (&Greeting::Bye, Language::French) => "Au revoir!",
-            _ => "🤯",
+    let root_path = match args.path {
+        // If the CLI was provided a directory, convert it to absolute.
+        Some(path) => std::path::absolute(path)?,
+        // If no path was provided, use the current directory.
+        None => std::env::current_dir().unwrap_or(
+            // If we can't find the CWD, attempt to open the home directory.
+            dirs::home_dir().context("Failed to obtain home directory")?,
+        ),
+    };
+    info!(target:"main()", "Root path detected: {root_path:?}");
+
+    match args.gui {
+        true => {
+            trace!(target:"main()", "Starting GUI");
+            gui::run(root_path)
         }
-            .to_string()
-    }
-}
-
-pub struct GreeterRust {
-    greeting: Greeting,
-    language: Language,
-}
-
-impl Default for GreeterRust {
-    fn default() -> Self {
-        Self {
-            greeting: Greeting::Hello,
-            language: Language::English,
-        }
-    }
-}
-
-use cxx_qt_lib::QString;
-
-impl qobject::Greeter {
-    fn greet(&self) -> QString {
-        QString::from(self.greeting.translate(self.language))
-    }
-}
-
-fn main() {
-    use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QUrl};
-
-    let mut app = QGuiApplication::new();
-    let mut engine = QQmlApplicationEngine::new();
-
-    if let Some(engine) = engine.as_mut() {
-        engine.load(&QUrl::from("qml/main.qml"));
-    }
-
-    if let Some(app) = app.as_mut() {
-        app.exec();
+        false => match args.tui {
+            // Open the TUI editor if requested, otherwise use the QML GUI by default.
+            true => {
+                trace!(target:"main()", "Starting TUI");
+                Ok(Tui::new(root_path)?.start()?)
+            }
+            false => {
+                trace!(target:"main()", "Starting GUI in a new process");
+                Command::new(std::env::current_exe()?)
+                    .args(&["--gui", root_path.to_str().unwrap()])
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .stdin(Stdio::null())
+                    .spawn()?;
+                Ok(())
+            }
+        },
     }
 }

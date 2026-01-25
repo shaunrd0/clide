@@ -1,10 +1,13 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 
-import "Menu"
+import clide.module 1.0
 
 ApplicationWindow {
+    id: appWindow
+
     height: 800
     title: "CLIDE"
     visible: true
@@ -15,6 +18,15 @@ ApplicationWindow {
 
     Rectangle {
         anchors.fill: parent
-        color: "#1e1f22"  // Dark background
+        color: RustColors.gutter
+    }
+
+    MessageDialog {
+        id: errorDialog
+
+        title: qsTr("Error")
+    }
+    ClideProjectView {
     }
 }
+

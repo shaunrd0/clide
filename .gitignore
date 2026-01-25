@@ -1,3 +1,4 @@
-/target
-.qtcreator
-.idea
+**/target/**
+**/.qtcreator/**
+**/.idea/**
+**/*.autosave/**

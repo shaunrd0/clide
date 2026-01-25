@@ -1,0 +1,193 @@
+use crate::tui::component::{Action, Component, ComponentState, Focus, FocusState};
+use anyhow::{Context, Result, bail};
+use log::trace;
+use ratatui::buffer::Buffer;
+use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, MouseEvent, MouseEventKind};
+use ratatui::layout::{Alignment, Position, Rect};
+use ratatui::prelude::Style;
+use ratatui::style::{Color, Modifier};
+use ratatui::widgets::{Block, Borders, StatefulWidget, Widget};
+use std::fs;
+use std::path::PathBuf;
+use tui_tree_widget::{Tree, TreeItem, TreeState};
+
+#[derive(Debug)]
+pub struct Explorer<'a> {
+    pub(crate) root_path: PathBuf,
+    tree_items: TreeItem<'a, String>,
+    tree_state: TreeState<String>,
+    pub(crate) component_state: ComponentState,
+}
+
+impl<'a> Explorer<'a> {
+    pub fn id() -> &'static str {
+        "Explorer"
+    }
+
+    pub fn new(path: &PathBuf) -> Result<Self> {
+        trace!(target:Self::id(), "Building {}", Self::id());
+        let explorer = Explorer {
+            root_path: path.to_owned(),
+            tree_items: Self::build_tree_from_path(path.to_owned())?,
+            tree_state: TreeState::default(),
+            component_state: ComponentState::default().with_help_text(concat!(
+                "(↑/k)/(↓/j): Select item | ←/h: Close folder | →/l: Open folder |",
+                " Space: Open / close folder | Enter: Open file in new editor tab"
+            )),
+        };
+        Ok(explorer)
+    }
+
+    fn build_tree_from_path(path: PathBuf) -> Result<TreeItem<'static, String>> {
+        let mut children = vec![];
+        if let Ok(entries) = fs::read_dir(&path) {
+            let mut paths = entries
+                .map(|res| res.map(|e| e.path()))
+                .collect::<Result<Vec<_>, std::io::Error>>()
+                .context(format!(
+                    "Failed to build vector of paths under directory: {:?}",
+                    path
+                ))?;
+            paths.sort();
+            for path in paths {
+                if path.is_dir() {
+                    children.push(Self::build_tree_from_path(path)?);
+                } else {
+                    if let Ok(path) = std::path::absolute(&path) {
+                        let path_str = path.to_string_lossy().to_string();
+                        children.push(TreeItem::new_leaf(
+                            path_str,
+                            path.file_name()
+                                .context("Failed to get file name from path.")?
+                                .to_string_lossy()
+                                .to_string(),
+                        ));
+                    }
+                }
+            }
+        }
+
+        let abs = std::path::absolute(&path)
+            .context(format!(
+                "Failed to find absolute path for TreeItem: {:?}",
+                path
+            ))?
+            .to_string_lossy()
+            .to_string();
+        TreeItem::new(
+            abs,
+            path.file_name()
+                .expect("Failed to get file name from path.")
+                .to_string_lossy()
+                .to_string(),
+            children,
+        )
+        .context("Failed to build tree from path.")
+    }
+
+    pub fn selected(&self) -> Result<String> {
+        if let Some(path) = self.tree_state.selected().last() {
+            return Ok(std::path::absolute(path)?
+                .to_str()
+                .context("Failed to get absolute path to selected TreeItem")?
+                .to_string());
+        }
+        bail!("Failed to get selected TreeItem")
+    }
+}
+
+impl<'a> Widget for &mut Explorer<'a> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Ok(tree) = Tree::new(&self.tree_items.children()) {
+            let file_name = self.root_path.file_name().unwrap_or("Unknown".as_ref());
+            StatefulWidget::render(
+                tree.block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(file_name.to_string_lossy())
+                        .border_style(Style::default().fg(self.component_state.get_active_color()))
+                        .title_style(Style::default().fg(Color::Green))
+                        .title_alignment(Alignment::Center),
+                )
+                .highlight_style(
+                    Style::new()
+                        .fg(Color::Black)
+                        .bg(Color::Rgb(57, 59, 64))
+                        .add_modifier(Modifier::BOLD),
+                ),
+                area,
+                buf,
+                &mut self.tree_state,
+            );
+        }
+    }
+}
+
+impl<'a> Component for Explorer<'a> {
+    fn handle_event(&mut self, event: Event) -> Result<Action> {
+        if let Some(key_event) = event.as_key_event() {
+            // Handle events here that should not be passed on to the vim emulation handler.
+            match self.handle_key_events(key_event)? {
+                Action::Handled => return Ok(Action::Handled),
+                Action::OpenTab => return Ok(Action::OpenTab),
+                _ => {}
+            }
+        }
+        if let Some(mouse_event) = event.as_mouse_event() {
+            match self.handle_mouse_events(mouse_event)? {
+                Action::Handled => return Ok(Action::Handled),
+                _ => {}
+            }
+        }
+        Ok(Action::Pass)
+    }
+
+    fn handle_key_events(&mut self, key: KeyEvent) -> Result<Action> {
+        if key.code == KeyCode::Enter {
+            if let Ok(selected) = self.selected() {
+                if PathBuf::from(&selected).is_file() {
+                    return Ok(Action::OpenTab);
+                }
+            }
+            // Otherwise fall through and handle Enter in the next match case.
+        }
+
+        let changed = match key.code {
+            KeyCode::Up | KeyCode::Char('k') => self.tree_state.key_up(),
+            KeyCode::Down | KeyCode::Char('j') => self.tree_state.key_down(),
+            KeyCode::Left | KeyCode::Char('h') => {
+                // Do not call key_left(); Calling it on a closed folder clears the selection.
+                let key = self.tree_state.selected().to_owned();
+                self.tree_state.close(key.as_ref())
+            }
+            KeyCode::Char(' ') | KeyCode::Enter => self
+                .tree_state
+                .toggle(self.tree_state.selected().to_owned()),
+            KeyCode::Right | KeyCode::Char('l') => self.tree_state.key_right(),
+            _ => false,
+        };
+        if changed {
+            return Ok(Action::Handled);
+        }
+        Ok(Action::Noop)
+    }
+
+    fn handle_mouse_events(&mut self, mouse: MouseEvent) -> Result<Action> {
+        let changed = match mouse.kind {
+            MouseEventKind::ScrollDown => self.tree_state.scroll_down(1),
+            MouseEventKind::ScrollUp => self.tree_state.scroll_up(1),
+            MouseEventKind::Down(_button) => self
+                .tree_state
+                .click_at(Position::new(mouse.column, mouse.row)),
+            _ => false,
+        };
+        if changed {
+            return Ok(Action::Handled);
+        }
+        Ok(Action::Noop)
+    }
+
+    fn is_active(&self) -> bool {
+        self.component_state.focus == Focus::Active
+    }
+}
