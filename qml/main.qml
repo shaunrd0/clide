@@ -13,6 +13,8 @@ ApplicationWindow {
     visible: true
     width: 1200
 
+    required property string appContextPath
+
     menuBar: ClideMenuBar {
     }
 
@@ -27,6 +29,7 @@ ApplicationWindow {
         title: qsTr("Error")
     }
     ClideProjectView {
+        projectDir: appWindow.appContextPath
     }
 }
 

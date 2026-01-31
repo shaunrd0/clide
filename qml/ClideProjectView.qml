@@ -7,8 +7,8 @@ import clide.module 1.0
 SplitView {
     id: root
 
-    // Path to the file selected in the tree view.
-    default property string selectedFilePath: FileSystem.filePath;
+    // Path to the directory of the project opened in clide.
+    required property string projectDir
 
     Layout.fillHeight: true
     Layout.fillWidth: true
@@ -43,13 +43,18 @@ SplitView {
             anchors.fill: parent
             ClideTreeView {
                 id: clideTreeView
-                onFileClicked: path => root.selectedFilePath = path
+                onFileClicked: path => root.projectDir = path
+
+                // Path to the directory opened in the file explorer.
+                rootDirectory: root.projectDir
             }
         }
     }
     ClideEditor {
         SplitView.fillWidth: true
-        // Initialize using the Default trait in Rust QML singleton FileSystem.
-        filePath: root.selectedFilePath
+
+        // Provide a path to the file currently open in the text editor.
+        // Initialized using the Default trait in Rust QML singleton FileSystem.
+        filePath: FileSystem.filePath
     }
 }

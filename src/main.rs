@@ -1,5 +1,4 @@
-use crate::tui::Tui;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use clap::Parser;
 use log::{info, trace};
 use std::process::{Command, Stdio};
@@ -25,41 +24,67 @@ struct Cli {
     pub gui: bool,
 }
 
+impl Cli {
+    fn run_mode(&self) -> Result<RunMode> {
+        let mut modes = Vec::new();
+        self.tui.then(|| modes.push(RunMode::Tui));
+        self.gui.then(|| modes.push(RunMode::GuiAttached));
+        match &modes[..] {
+            [] => Ok(RunMode::Gui),
+            [mode] => Ok(*mode),
+            multiple => Err(anyhow!(
+                "More than one run mode found {multiple:?} please select one."
+            )),
+        }
+    }
+}
+
+pub struct AppContext {
+    pub path: std::path::PathBuf,
+    pub run_mode: RunMode,
+}
+
+impl AppContext {
+    fn new(cli: Cli) -> Result<Self> {
+        let path = match &cli.path {
+            // If the CLI was provided a directory, convert it to absolute.
+            Some(path) => std::path::absolute(path)?,
+            // If no path was provided, use the current directory.
+            None => std::env::current_dir().context("Failed to obtain current directory")?,
+        };
+        info!(target:"main()", "Root path detected: {path:?}");
+
+        Ok(Self {
+            path,
+            run_mode: cli.run_mode()?,
+        })
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default)]
+pub enum RunMode {
+    #[default]
+    Gui,
+    GuiAttached,
+    Tui,
+}
+
 fn main() -> Result<()> {
     let args = Cli::parse();
-
-    let root_path = match args.path {
-        // If the CLI was provided a directory, convert it to absolute.
-        Some(path) => std::path::absolute(path)?,
-        // If no path was provided, use the current directory.
-        None => std::env::current_dir().unwrap_or(
-            // If we can't find the CWD, attempt to open the home directory.
-            dirs::home_dir().context("Failed to obtain home directory")?,
-        ),
-    };
-    info!(target:"main()", "Root path detected: {root_path:?}");
-
-    match args.gui {
-        true => {
-            trace!(target:"main()", "Starting GUI");
-            gui::run(root_path)
+    let app_context = AppContext::new(args)?;
+    match app_context.run_mode {
+        RunMode::GuiAttached => gui::run(app_context),
+        RunMode::Tui => tui::run(app_context),
+        RunMode::Gui => {
+            trace!(target:"main()", "Starting GUI in a new process");
+            Command::new(std::env::current_exe()?)
+                .args(&["--gui", app_context.path.to_str().unwrap()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .stdin(Stdio::null())
+                .spawn()
+                .context("Failed to start GUI")
+                .map(|_| ())
         }
-        false => match args.tui {
-            // Open the TUI editor if requested, otherwise use the QML GUI by default.
-            true => {
-                trace!(target:"main()", "Starting TUI");
-                Ok(Tui::new(root_path)?.start()?)
-            }
-            false => {
-                trace!(target:"main()", "Starting GUI in a new process");
-                Command::new(std::env::current_exe()?)
-                    .args(&["--gui", root_path.to_str().unwrap()])
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .stdin(Stdio::null())
-                    .spawn()?;
-                Ok(())
-            }
-        },
     }
 }

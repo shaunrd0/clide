@@ -7,8 +7,9 @@ use ratatui::layout::{Alignment, Position, Rect};
 use ratatui::prelude::Style;
 use ratatui::style::{Color, Modifier};
 use ratatui::widgets::{Block, Borders, StatefulWidget, Widget};
+use std::ffi::OsStr;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 
 #[derive(Debug)]
@@ -20,12 +21,10 @@ pub struct Explorer<'a> {
 }
 
 impl<'a> Explorer<'a> {
-    pub fn id() -> &'static str {
-        "Explorer"
-    }
+    pub const ID: &'static str = "Explorer";
 
     pub fn new(path: &PathBuf) -> Result<Self> {
-        trace!(target:Self::id(), "Building {}", Self::id());
+        trace!(target:Self::ID, "Building {}", Self::ID);
         let explorer = Explorer {
             root_path: path.to_owned(),
             tree_items: Self::build_tree_from_path(path.to_owned())?,
@@ -40,23 +39,24 @@ impl<'a> Explorer<'a> {
 
     fn build_tree_from_path(path: PathBuf) -> Result<TreeItem<'static, String>> {
         let mut children = vec![];
-        if let Ok(entries) = fs::read_dir(&path) {
+        let clean_path = fs::canonicalize(path)?;
+        if let Ok(entries) = fs::read_dir(&clean_path) {
             let mut paths = entries
                 .map(|res| res.map(|e| e.path()))
                 .collect::<Result<Vec<_>, std::io::Error>>()
                 .context(format!(
                     "Failed to build vector of paths under directory: {:?}",
-                    path
+                    clean_path
                 ))?;
             paths.sort();
             for path in paths {
                 if path.is_dir() {
                     children.push(Self::build_tree_from_path(path)?);
                 } else {
-                    if let Ok(path) = std::path::absolute(&path) {
+                    if let Ok(path) = fs::canonicalize(&path) {
                         let path_str = path.to_string_lossy().to_string();
                         children.push(TreeItem::new_leaf(
-                            path_str,
+                            path_str + uuid::Uuid::new_v4().to_string().as_str(),
                             path.file_name()
                                 .context("Failed to get file name from path.")?
                                 .to_string_lossy()
@@ -67,22 +67,16 @@ impl<'a> Explorer<'a> {
             }
         }
 
-        let abs = std::path::absolute(&path)
-            .context(format!(
-                "Failed to find absolute path for TreeItem: {:?}",
-                path
-            ))?
-            .to_string_lossy()
-            .to_string();
         TreeItem::new(
-            abs,
-            path.file_name()
-                .expect("Failed to get file name from path.")
+            clean_path.to_string_lossy().to_string() + uuid::Uuid::new_v4().to_string().as_str(),
+            clean_path
+                .file_name()
+                .context(format!("Failed to get file name from path: {clean_path:?}"))?
                 .to_string_lossy()
                 .to_string(),
             children,
         )
-        .context("Failed to build tree from path.")
+        .context(format!("Failed to build tree from path: {clean_path:?}"))
     }
 
     pub fn selected(&self) -> Result<String> {
@@ -99,7 +93,10 @@ impl<'a> Explorer<'a> {
 impl<'a> Widget for &mut Explorer<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         if let Ok(tree) = Tree::new(&self.tree_items.children()) {
-            let file_name = self.root_path.file_name().unwrap_or("Unknown".as_ref());
+            let file_name = self
+                .root_path
+                .file_name()
+                .unwrap_or_else(|| OsStr::new("Unknown"));
             StatefulWidget::render(
                 tree.block(
                     Block::default()
@@ -145,7 +142,7 @@ impl<'a> Component for Explorer<'a> {
     fn handle_key_events(&mut self, key: KeyEvent) -> Result<Action> {
         if key.code == KeyCode::Enter {
             if let Ok(selected) = self.selected() {
-                if PathBuf::from(&selected).is_file() {
+                if Path::new(&selected).is_file() {
                     return Ok(Action::OpenTab);
                 }
             }

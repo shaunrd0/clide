@@ -7,6 +7,7 @@ mod explorer;
 mod logger;
 mod menu_bar;
 
+use crate::AppContext;
 use anyhow::{Context, Result};
 use log::{LevelFilter, debug, info, trace};
 use ratatui::Terminal;
@@ -23,21 +24,24 @@ use tui_logger::{
     TuiLoggerFile, TuiLoggerLevelOutput, init_logger, set_default_level, set_log_file,
 };
 
-pub struct Tui {
+struct Tui {
     terminal: Terminal<CrosstermBackend<Stdout>>,
     root_path: std::path::PathBuf,
 }
 
-impl Tui {
-    pub fn id() -> &'static str {
-        "Tui"
-    }
+pub fn run(app_context: AppContext) -> Result<()> {
+    trace!(target:Tui::ID, "Starting TUI");
+    Tui::new(app_context)?.start()
+}
 
-    pub fn new(root_path: std::path::PathBuf) -> Result<Self> {
-        trace!(target:Self::id(), "Building {}", Self::id());
+impl Tui {
+    pub const ID: &str = "Tui";
+
+    fn new(app_context: AppContext) -> Result<Self> {
+        trace!(target:Self::ID, "Building {}", Self::ID);
         init_logger(LevelFilter::Trace)?;
         set_default_level(LevelFilter::Trace);
-        debug!(target:Self::id(), "Logging initialized");
+        debug!(target:Self::ID, "Logging initialized");
 
         let mut dir = env::temp_dir();
         dir.push("clide.log");
@@ -49,16 +53,16 @@ impl Tui {
         .output_file(false)
         .output_separator(':');
         set_log_file(file_options);
-        debug!(target:Self::id(), "Logging to file: {dir:?}");
+        debug!(target:Self::ID, "Logging to file: {dir:?}");
 
         Ok(Self {
             terminal: Terminal::new(CrosstermBackend::new(stdout()))?,
-            root_path,
+            root_path: app_context.path,
         })
     }
 
-    pub fn start(self) -> Result<()> {
-        info!(target:Self::id(), "Starting the TUI editor at {:?}", self.root_path);
+    fn start(self) -> Result<()> {
+        info!(target:Self::ID, "Starting the TUI editor at {:?}", self.root_path);
         ratatui::crossterm::execute!(
             stdout(),
             EnterAlternateScreen,
@@ -75,7 +79,7 @@ impl Tui {
     }
 
     fn stop() -> Result<()> {
-        info!(target:Self::id(), "Stopping the TUI editor");
+        info!(target:Self::ID, "Stopping the TUI editor");
         disable_raw_mode()?;
         ratatui::crossterm::execute!(
             stdout(),

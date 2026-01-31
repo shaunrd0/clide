@@ -13,7 +13,7 @@ SplitView {
     // The path to the file to show in the text editor.
     // This is updated by a signal caught within ClideProjectView.
     // Initialized by the Default trait for the Rust QML singleton FileSystem.
-    required property string filePath;
+    required property string filePath
 
     // Customized handle to drag between the Editor and the Console.
     handle: Rectangle {

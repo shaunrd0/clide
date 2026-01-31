@@ -111,7 +111,7 @@ impl FocusState for ComponentState {
     fn with_focus(self, focus: Focus) -> Self {
         Self {
             focus,
-            vis: Visibility::Visible,
+            vis: self.vis,
             help_text: self.help_text,
         }
     }
@@ -142,7 +142,7 @@ pub enum Visibility {
 pub trait VisibleState {
     fn with_visible(self, vis: Visibility) -> Self;
     fn set_visible(&mut self, vis: Visibility);
-    fn togget_visible(&mut self);
+    fn toggle_visible(&mut self);
 }
 
 impl VisibleState for ComponentState {
@@ -158,7 +158,7 @@ impl VisibleState for ComponentState {
         self.vis = vis;
     }
 
-    fn togget_visible(&mut self) {
+    fn toggle_visible(&mut self) {
         match self.vis {
             Visibility::Visible => self.set_visible(Visibility::Hidden),
             Visibility::Hidden => self.set_visible(Visibility::Visible),

@@ -2,6 +2,7 @@ use crate::tui::component::{Action, Component, ComponentState, FocusState};
 use crate::tui::menu_bar::MenuBarItemOption::{
     About, CloseTab, Exit, Reload, Save, ShowHideExplorer, ShowHideLogger,
 };
+use anyhow::Context;
 use log::trace;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
@@ -83,13 +84,11 @@ pub struct MenuBar {
 }
 
 impl MenuBar {
-    pub fn id() -> &'static str {
-        "MenuBar"
-    }
+    pub const ID: &str = "MenuBar";
 
     const DEFAULT_HELP: &str = "(←/h)/(→/l): Select option | Enter: Choose selection";
     pub fn new() -> Self {
-        trace!(target:Self::id(), "Building {}", Self::id());
+        trace!(target:Self::ID, "Building {}", Self::ID);
         Self {
             selected: MenuBarItem::File,
             opened: None,
@@ -154,7 +153,7 @@ impl MenuBar {
             height,
         };
         // TODO: X offset for item option? It's fine as-is, but it might look nicer.
-        // trace!(target:Self::id(), "Building Rect under MenuBar popup {}", rect);
+        // trace!(target:Self::ID, "Building Rect under MenuBar popup {}", rect);
         rect
     }
 }
@@ -192,7 +191,11 @@ impl Component for MenuBar {
                 }
                 KeyCode::Enter => {
                     if let Some(selected) = self.list_state.selected() {
-                        let selection = self.selected.options()[selected];
+                        let selection = self
+                            .selected
+                            .options()
+                            .get(selected)
+                            .context("Failed to get selected MenuBar option")?;
                         return match selection {
                             Save => Ok(Action::Save),
                             Exit => Ok(Action::Quit),

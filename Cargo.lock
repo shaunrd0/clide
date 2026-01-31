@@ -303,6 +303,7 @@ dependencies = [
  "syntect",
  "tui-logger",
  "tui-tree-widget",
+ "uuid",
 ]
 
 [[package]]

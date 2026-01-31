@@ -29,7 +29,8 @@ cd clide
 cargo install --path .
 ```
 
-After installation `clide` can be used directly
+After installation `clide` can be used directly.
+A path can optionally be provided to open a specific directory with `clide /path/to/project`.
 
 ```bash
 clide --help

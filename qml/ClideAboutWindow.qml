@@ -58,7 +58,7 @@ ApplicationWindow {
                 + "<p>Project notes <a href=\"http://knoats.com\">knoats.com</a></p>"
                 + "<p>This project is developed at <a href=\"http://git.shaunreed.com/shaunrd0/clide\">git.shaunreed.com</a></p>"
                 + "<p><a href=\"https://github.com/KDAB/cxx-qt\">KDAB CXX-Qt repository</a></p>"
-                + "<p>Copyright (C) 2025 Shaun Reed, all rights reserved.</p>")
+                + "<p>Copyright (C) 2026 Shaun Reed, all rights reserved.</p>")
             color: RustColors.editor_text
             wrapMode: Text.WordWrap
             readOnly: true

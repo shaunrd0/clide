@@ -17,7 +17,7 @@ use ratatui::crossterm::event::{
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::prelude::{Color, Widget};
 use ratatui::widgets::{Paragraph, Wrap};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -29,7 +29,7 @@ pub enum AppComponent {
 }
 
 pub struct App<'a> {
-    editor_tabs: EditorTab,
+    editor_tab: EditorTab,
     explorer: Explorer<'a>,
     logger: Logger,
     menu_bar: MenuBar,
@@ -38,14 +38,12 @@ pub struct App<'a> {
 }
 
 impl<'a> App<'a> {
-    pub fn id() -> &'static str {
-        "App"
-    }
+    pub const ID: &'static str = "App";
 
     pub fn new(root_path: PathBuf) -> Result<Self> {
-        trace!(target:Self::id(), "Building {}", Self::id());
+        trace!(target:Self::ID, "Building {}", Self::ID);
         let app = Self {
-            editor_tabs: EditorTab::new(None),
+            editor_tab: EditorTab::new(),
             explorer: Explorer::new(&root_path)?,
             logger: Logger::new(),
             menu_bar: MenuBar::new(),
@@ -57,13 +55,13 @@ impl<'a> App<'a> {
 
     /// Logic that should be executed once on application startup.
     pub fn start(&mut self) -> Result<()> {
-        trace!(target:Self::id(), "Starting App");
+        trace!(target:Self::ID, "Starting App");
         Ok(())
     }
 
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.start()?;
-        trace!(target:Self::id(), "Entering App run loop");
+        trace!(target:Self::ID, "Entering App run loop");
         loop {
             terminal.draw(|f| {
                 f.render_widget(&mut self, f.area());
@@ -85,11 +83,11 @@ impl<'a> App<'a> {
     fn draw_bottom_status(&self, area: Rect, buf: &mut Buffer) {
         // Determine help text from the most recently focused component.
         let help = match self.last_active {
-            AppEditor => match self.editor_tabs.current_editor() {
+            AppEditor => match self.editor_tab.current_editor() {
                 Some(editor) => editor.component_state.help_text.clone(),
                 None => {
-                    if !self.editor_tabs.is_empty() {
-                        error!(target:Self::id(), "Failed to get Editor while drawing bottom status bar");
+                    if !self.editor_tab.is_empty() {
+                        error!(target:Self::ID, "Failed to get Editor while drawing bottom status bar");
                     }
                     "Failed to get current Editor while getting widget help text".to_string()
                 }
@@ -113,26 +111,26 @@ impl<'a> App<'a> {
     }
 
     fn clear_focus(&mut self) {
-        info!(target:Self::id(), "Clearing all widget focus");
+        info!(target:Self::ID, "Clearing all widget focus");
         self.explorer.component_state.set_focus(Focus::Inactive);
         self.explorer.component_state.set_focus(Focus::Inactive);
         self.logger.component_state.set_focus(Focus::Inactive);
         self.menu_bar.component_state.set_focus(Focus::Inactive);
-        match self.editor_tabs.current_editor_mut() {
+        match self.editor_tab.current_editor_mut() {
             None => {
-                error!(target:Self::id(), "Failed to get current Editor while clearing focus")
+                error!(target:Self::ID, "Failed to get current Editor while clearing focus")
             }
             Some(editor) => editor.component_state.set_focus(Focus::Inactive),
         }
     }
 
     fn change_focus(&mut self, focus: AppComponent) {
-        info!(target:Self::id(), "Changing widget focus to {:?}", focus);
+        info!(target:Self::ID, "Changing widget focus to {:?}", focus);
         self.clear_focus();
         match focus {
-            AppEditor => match self.editor_tabs.current_editor_mut() {
+            AppEditor => match self.editor_tab.current_editor_mut() {
                 None => {
-                    error!(target:Self::id(), "Failed to get current Editor while changing focus")
+                    error!(target:Self::ID, "Failed to get current Editor while changing focus")
                 }
                 Some(editor) => editor.component_state.set_focus(Focus::Active),
             },
@@ -141,32 +139,6 @@ impl<'a> App<'a> {
             AppMenuBar => self.menu_bar.component_state.set_focus(Focus::Active),
         }
         self.last_active = focus;
-    }
-
-    /// Refresh the contents of the editor to match the selected TreeItem in the file Explorer.
-    /// If the selected item is not a file, this does nothing.
-    #[allow(unused)]
-    fn refresh_editor_contents(&mut self) -> Result<()> {
-        // TODO: This may be useful for a preview mode of the selected file prior to opening a tab.
-        // Use the currently selected TreeItem or get an absolute path to this source file.
-        // let selected_pathbuf = match self.explorer.selected() {
-        //     Ok(path) => PathBuf::from(path),
-        //     Err(_) => PathBuf::from(std::path::absolute(file!())?.to_string_lossy().to_string()),
-        // };
-        // match self.editor_tabs.current_editor_mut() {
-        //     None => bail!("Failed to get current Editor while refreshing editor contents"),
-        //     Some(editor) => {
-        //         let current_file_path = editor
-        //             .file_path
-        //             .clone()
-        //             .context("Failed to get Editor current file_path")?;
-        //         if selected_pathbuf == current_file_path || !selected_pathbuf.is_file() {
-        //             return Ok(());
-        //         }
-        //         editor.set_contents(&selected_pathbuf)
-        //     }
-        // }
-        Ok(())
     }
 }
 
@@ -225,7 +197,7 @@ impl<'a> Widget for &mut App<'a> {
                         Constraint::Fill(1),   // Editor contents.
                     ])
                     .split(horizontal[1]);
-                self.editor_tabs
+                self.editor_tab
                     .render(editor_layout[0], editor_layout[1], buf);
                 self.explorer.render(horizontal[0], buf);
             }
@@ -237,7 +209,7 @@ impl<'a> Widget for &mut App<'a> {
                         Constraint::Fill(1),   // Editor contents.
                     ])
                     .split(horizontal[0]);
-                self.editor_tabs
+                self.editor_tab
                     .render(editor_layout[0], editor_layout[1], buf);
             }
         }
@@ -258,7 +230,7 @@ impl<'a> Widget for &mut App<'a> {
         }
 
         if self.about {
-            let about_area = area.centered(Constraint::Percentage(50), Constraint::Percentage(45));
+            let about_area = area.centered(Constraint::Percentage(40), Constraint::Percentage(50));
             About::new().render(about_area, buf);
         }
     }
@@ -279,7 +251,7 @@ impl<'a> Component for App<'a> {
         }
         // Handle events for all components.
         let action = match self.last_active {
-            AppEditor => self.editor_tabs.handle_event(event.clone())?,
+            AppEditor => self.editor_tab.handle_event(event.clone())?,
             AppExplorer => self.explorer.handle_event(event.clone())?,
             AppLogger => self.logger.handle_event(event.clone())?,
             AppMenuBar => self.menu_bar.handle_event(event.clone())?,
@@ -288,7 +260,7 @@ impl<'a> Component for App<'a> {
         // Components should always handle mouse events for click interaction.
         if let Some(mouse) = event.as_mouse_event() {
             if mouse.kind == MouseEventKind::Down(MouseButton::Left) {
-                if let Some(editor) = self.editor_tabs.current_editor_mut() {
+                if let Some(editor) = self.editor_tab.current_editor_mut() {
                     editor.handle_mouse_events(mouse)?;
                 }
                 self.explorer.handle_mouse_events(mouse)?;
@@ -299,50 +271,50 @@ impl<'a> Component for App<'a> {
         // Handle actions returned from widgets that may need context on other widgets or app state.
         match action {
             Action::Quit | Action::Handled => Ok(action),
-            Action::Save => match self.editor_tabs.current_editor_mut() {
+            Action::Save => match self.editor_tab.current_editor_mut() {
                 None => {
-                    error!(target:Self::id(), "Failed to get current editor while handling App Action::Save");
+                    error!(target:Self::ID, "Failed to get current editor while handling App Action::Save");
                     Ok(Action::Noop)
                 }
                 Some(editor) => match editor.save() {
                     Ok(_) => Ok(Action::Handled),
                     Err(e) => {
-                        error!(target:Self::id(), "Failed to save editor contents: {e}");
+                        error!(target:Self::ID, "Failed to save editor contents: {e}");
                         Ok(Action::Noop)
                     }
                 },
             },
             Action::OpenTab => {
                 if let Ok(path) = self.explorer.selected() {
-                    let path_buf = PathBuf::from(path);
-                    self.editor_tabs.open_tab(&path_buf)?;
+                    let path_buf = Path::new(&path);
+                    self.editor_tab.open_tab(path_buf)?;
                     Ok(Action::Handled)
                 } else {
                     Ok(Action::Noop)
                 }
             }
-            Action::CloseTab => match self.editor_tabs.close_current_tab() {
+            Action::CloseTab => match self.editor_tab.close_current_tab() {
                 Ok(_) => Ok(Action::Handled),
                 Err(_) => Ok(Action::Noop),
             },
             Action::ReloadFile => {
-                trace!(target:Self::id(), "Reloading file for current editor");
-                if let Some(editor) = self.editor_tabs.current_editor_mut() {
+                trace!(target:Self::ID, "Reloading file for current editor");
+                if let Some(editor) = self.editor_tab.current_editor_mut() {
                     editor
                         .reload_contents()
                         .map(|_| Action::Handled)
                         .context("Failed to handle Action::ReloadFile")
                 } else {
-                    error!(target:Self::id(), "Failed to get current editor while handling App Action::ReloadFile");
+                    error!(target:Self::ID, "Failed to get current editor while handling App Action::ReloadFile");
                     Ok(Action::Noop)
                 }
             }
             Action::ShowHideLogger => {
-                self.logger.component_state.togget_visible();
+                self.logger.component_state.toggle_visible();
                 Ok(Action::Handled)
             }
             Action::ShowHideExplorer => {
-                self.explorer.component_state.togget_visible();
+                self.explorer.component_state.toggle_visible();
                 Ok(Action::Handled)
             }
             Action::ShowHideAbout => {

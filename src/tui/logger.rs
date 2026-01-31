@@ -15,12 +15,10 @@ pub struct Logger {
 }
 
 impl Logger {
-    pub fn id() -> &'static str {
-        "Logger"
-    }
+    pub const ID: &str = "Logger";
 
     pub fn new() -> Self {
-        trace!(target:Self::id(), "Building {}", Self::id());
+        trace!(target:Self::ID, "Building {}", Self::ID);
         let state = TuiWidgetState::new();
         state.transition(TuiWidgetEvent::HideKey);
         Self {
