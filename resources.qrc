@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="kilroy.png">resources/images/kilroy-256.png</file>
+    </qresource>
+    <qresource prefix="/fonts">
+        <file alias="saucecodepro.ttf">resources/SauceCodeProNerdFont-Black.ttf</file>
+        <file alias="saucecodepro-light.ttf">resources/SauceCodeProNerdFont-Light.ttf</file>
+        <file alias="saucecodepro-xlight.ttf">resources/SauceCodeProNerdFont-ExtraLight.ttf</file>
+    </qresource>
+</RCC>

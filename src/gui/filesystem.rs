@@ -1,3 +1,19 @@
+// SPDX-FileCopyrightText: 2026, Shaun Reed <shaunrd0@gmail.com>
+//
+// SPDX-License-Identifier: GNU General Public License v3.0 or later
+
+use cxx_qt_lib::{QModelIndex, QString};
+use devicons::FileIcon;
+use dirs;
+use log::warn;
+use std::fs;
+use std::path::Path;
+use syntect::easy::HighlightLines;
+use syntect::highlighting::ThemeSet;
+use syntect::html::{IncludeBackground, append_highlighted_html_for_styled_line};
+use syntect::parsing::SyntaxSet;
+use syntect::util::LinesWithEndings;
+
 #[cxx_qt::bridge]
 pub mod qobject {
     unsafe extern "C++" {
@@ -17,7 +33,6 @@ pub mod qobject {
         #[qml_element]
         #[qml_singleton]
         #[qproperty(QString, file_path, cxx_name = "filePath")]
-        #[qproperty(QModelIndex, root_index, cxx_name = "rootIndex")]
         type FileSystem = super::FileSystemImpl;
 
         #[inherit]
@@ -36,25 +51,14 @@ pub mod qobject {
         #[qinvokable]
         #[cxx_name = "setDirectory"]
         fn set_directory(self: Pin<&mut FileSystem>, path: &QString) -> QModelIndex;
+
+        #[qinvokable]
+        fn icon(self: Pin<&mut FileSystem>, path: &QString) -> QString;
     }
 }
 
-use cxx_qt_lib::{QModelIndex, QString};
-use dirs;
-use log::warn;
-use std::fs;
-use std::io::BufRead;
-use syntect::easy::HighlightFile;
-use syntect::highlighting::ThemeSet;
-use syntect::html::{
-    IncludeBackground, append_highlighted_html_for_styled_line, start_highlighted_html_snippet,
-};
-use syntect::parsing::SyntaxSet;
-
-// TODO: Impleent a provider for QFileSystemModel::setIconProvider for icons.
 pub struct FileSystemImpl {
     file_path: QString,
-    root_index: QModelIndex,
 }
 
 // Default is explicit to make the editor open this source file initially.
@@ -62,7 +66,6 @@ impl Default for FileSystemImpl {
     fn default() -> Self {
         Self {
             file_path: QString::from(file!()),
-            root_index: Default::default(),
         }
     }
 }
@@ -72,42 +75,47 @@ impl qobject::FileSystem {
         if path.is_empty() {
             return QString::default();
         }
-        if !fs::metadata(path.to_string())
-            .expect(format!("Failed to get file metadata {path:?}").as_str())
-            .is_file()
-        {
+        let meta = fs::metadata(path.to_string())
+            .expect(format!("Failed to get file metadata {path:?}").as_str());
+        if !meta.is_file() {
             warn!(target:"FileSystem", "Attempted to open file {path:?} that is not a valid file");
             return QString::default();
         }
-        let ss = SyntaxSet::load_defaults_nonewlines();
-        let ts = ThemeSet::load_defaults();
-        let theme = &ts.themes["base16-ocean.dark"];
+        let path_str = path.to_string();
+        if let Ok(lines) = fs::read_to_string(path_str.as_str()) {
+            let ss = SyntaxSet::load_defaults_nonewlines();
+            let ts = ThemeSet::load_defaults();
+            let theme = &ts.themes["base16-ocean.dark"];
+            let lang = ss
+                .find_syntax_by_extension(
+                    Path::new(path_str.as_str())
+                        .extension()
+                        .map(|s| s.to_str())
+                        .unwrap_or_else(|| Some("md"))
+                        .expect("Failed to get file extension"),
+                )
+                .unwrap_or_else(|| ss.find_syntax_plain_text());
+            let mut highlighter = HighlightLines::new(lang, theme);
+            // If you care about the background, see `start_highlighted_html_snippet(theme);`.
+            let mut output = String::from("<pre>\n");
+            for line in LinesWithEndings::from(lines.as_str()) {
+                let regions = highlighter
+                    .highlight_line(line, &ss)
+                    .expect("Failed to highlight");
 
-        let mut highlighter =
-            HighlightFile::new(path.to_string(), &ss, theme).expect("Failed to create highlighter");
-        let (mut output, _bg) = start_highlighted_html_snippet(theme);
-        let mut line = String::new();
-        while highlighter
-            .reader
-            .read_line(&mut line)
-            .expect("Failed to read file.")
-            > 0
-        {
-            let regions = highlighter
-                .highlight_lines
-                .highlight_line(&line, &ss)
-                .expect("Failed to highlight");
+                append_highlighted_html_for_styled_line(
+                    &regions[..],
+                    IncludeBackground::No,
+                    &mut output,
+                )
+                .expect("Failed to insert highlighted html");
+            }
 
-            append_highlighted_html_for_styled_line(
-                &regions[..],
-                IncludeBackground::Yes,
-                &mut output,
-            )
-            .expect("Failed to insert highlighted html");
-            line.clear();
+            output.push_str("</pre>\n");
+            QString::from(output)
+        } else {
+            return QString::default();
         }
-        output.push_str("</pre>\n");
-        QString::from(output)
     }
 
     // There will never be more than one column.
@@ -124,14 +132,24 @@ impl qobject::FileSystem {
             self.set_root_path(path)
         } else {
             // If the initial directory can't be opened, attempt to find the home directory.
-            self.set_root_path(&QString::from(
-                dirs::home_dir()
-                    .expect("Failed to get home directory")
-                    .as_path()
-                    .to_str()
-                    .unwrap()
-                    .to_string(),
-            ))
+            let homedir = dirs::home_dir()
+                .expect("Failed to get home directory")
+                .as_path()
+                .to_str()
+                .unwrap()
+                .to_string();
+            self.set_root_path(&QString::from(homedir))
         }
+    }
+
+    fn icon(self: std::pin::Pin<&mut Self>, path: &QString) -> QString {
+        let str = path.to_string();
+        if Path::new(&str).is_dir() {
+            // Ensures directories are given a folder icon and not mistakenly resolved to a language.
+            // For example, a directory named `cpp` would otherwise return a C++ icon.
+            return QString::from(FileIcon::from("dir/").to_string())
+        }
+        let icon = FileIcon::from(str);
+        QString::from(icon.to_string())
     }
 }

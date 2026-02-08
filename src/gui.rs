@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026, Shaun Reed <shaunrd0@gmail.com>
+//
+// SPDX-License-Identifier: GNU General Public License v3.0 or later
+
 use crate::AppContext;
 use anyhow::Result;
 use cxx_qt_lib::{QMapPair, QMapPair_QString_QVariant, QString, QVariant};

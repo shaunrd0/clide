@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026, Shaun Reed <shaunrd0@gmail.com>
+//
+// SPDX-License-Identifier: GNU General Public License v3.0 or later
+
 use crate::tui::component::{Action, Component, ComponentState, FocusState};
 use crate::tui::menu_bar::MenuBarItemOption::{
     About, CloseTab, Exit, Reload, Save, ShowHideExplorer, ShowHideLogger,

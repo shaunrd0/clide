@@ -1,153 +1,166 @@
+// SPDX-FileCopyrightText: 2026, Shaun Reed <shaunrd0@gmail.com>
+//
+// SPDX-License-Identifier: GNU General Public License v3.0 or later
+
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Controls
-import QtQuick.Layouts
 
 import clide.module 1.0
+import Logger 1.0
 
-Rectangle {
+TreeView {
     id: root
-    color: RustColors.explorer_background
 
-    required property string rootDirectory
+    property int lastIndex: -1
+    required property string originalRootDirectory
+    property string rootDirectory
+    property int rootIndent: 25
 
     signal fileClicked(string filePath)
 
-    TreeView {
-        id: fileSystemTreeView
-        anchors.margins: 15
+    boundsBehavior: Flickable.StopAtBounds
+    boundsMovement: Flickable.StopAtBounds
+    clip: true
 
-        property int lastIndex: -1
+    // The model is implemented in filesystem.rs
+    model: FileSystem
+    // Set the root directory on the Rust model, returning the QModeIndex to use for the root of the tree view widget.
+    rootIndex: FileSystem.setDirectory(root.rootDirectory)
 
-        model: FileSystem
-        anchors.fill: parent
-        boundsBehavior: Flickable.StopAtBounds
-        boundsMovement: Flickable.StopAtBounds
-        clip: true
+    // Provide our own custom ScrollIndicator for the TreeView.
+    ScrollBar.horizontal: ClideScrollBar {
+        sizeModifier: 3
+    }
+    ScrollBar.vertical: ClideScrollBar {
+        sizeModifier: 3
+    }
 
-        Component.onCompleted: {
-            FileSystem.setDirectory(root.rootDirectory)
-            fileSystemTreeView.expandRecursively(0, -1)
+    // The delegate represents a single entry in the filesystem.
+    delegate: TreeViewDelegate {
+        id: treeDelegate
+
+        required property string fileName
+        required property url filePath
+        required property int index
+
+        implicitHeight: 25
+        implicitWidth: root.width
+        indentation: 12
+
+        background: Rectangle {
+            color: current ? RustColors.explorer_folder_open : "transparent"
+            radius: 20
+            width: root.width
+        }
+        // Item name.
+        contentItem: Text {
+            anchors.left: itemIcon.right
+            anchors.leftMargin: 5
+            color: RustColors.explorer_text
+            text: treeDelegate.fileName
+        }
+        // Item Icon.
+        indicator: Label {
+            id: itemIcon
+
+            anchors.verticalCenter: parent.verticalCenter
+            antialiasing: true
+            enabled: false
+            focus: false
+            font.family: localFont.font.family
+            font.pixelSize: 18
+            smooth: true
+            // Get the icon from Rust implementation.
+            text: root.model.icon(filePath)
+            x: root.rootIndent + (treeDelegate.depth * treeDelegate.indentation) + (carrotIndicator.visible ? carrotIndicator.width : 0)
         }
 
-        // The delegate represents a single entry in the filesystem.
-        delegate: TreeViewDelegate {
-            id: treeDelegate
-            indentation: 8
-            implicitWidth: fileSystemTreeView.width > 0 ? fileSystemTreeView.width : 250
-            implicitHeight: 25
+        // Directory carrot indicator.
+        Label {
+            id: carrotIndicator
 
-            required property int index
-            required property url filePath
-            required property string fileName
+            anchors.verticalCenter: parent.verticalCenter
+            font.family: localFont.font.family
+            font.pixelSize: 10
+            font.weight: localFont.font.weight
+            text: expanded ? "⮟" : "⮞"
+            visible: isTreeNode && hasChildren
+            x: (root.rootIndent - implicitWidth) + (depth * indentation)
+        }
+        // Apply colorization effects to the icon for the item.
+        MultiEffect {
+            anchors.fill: itemIcon
+            brightness: 1.0
+            colorization: 1.0
+            colorizationColor: {
+                const isFile = !treeDelegate.hasChildren;
+                if (isFile)
+                    return Qt.lighter(RustColors.explorer_folder, 2);
+                const isExpandedFolder = treeDelegate.expanded && treeDelegate.hasChildren;
+                if (isExpandedFolder)
+                    return Qt.darker(RustColors.explorer_folder, 2);
+                else
+                    return RustColors.explorer_folder;
+            }
+            source: itemIcon
+        }
+        HoverHandler {
+            id: hoverHandler
 
-            indicator: Image {
-                id: directoryIcon
+            acceptedDevices: PointerDevice.Mouse
+        }
+        TapHandler {
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
 
-                function setSourceImage() {
-                    let folderOpen = "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 576 512\"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d=\"M88.7 223.8L0 375.8 0 96C0 60.7 28.7 32 64 32l117.5 0c17 0 33.3 6.7 45.3 18.7l26.5 26.5c12 12 28.3 18.7 45.3 18.7L416 96c35.3 0 64 28.7 64 64l0 32-336 0c-22.8 0-43.8 12.1-55.3 31.8zm27.6 16.1C122.1 230 132.6 224 144 224l400 0c11.5 0 22 6.1 27.7 16.1s5.7 22.2-.1 32.1l-112 192C453.9 474 443.4 480 432 480L32 480c-11.5 0-22-6.1-27.7-16.1s-5.7-22.2 .1-32.1l112-192z\"/></svg>";
-                    let folderClosed = "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d=\"M64 480H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H288c-10.1 0-19.6-4.7-25.6-12.8L243.2 57.6C231.1 41.5 212.1 32 192 32H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64z\"/></svg>";
-                    let file = "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 384 512\"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d=\"M0 64C0 28.7 28.7 0 64 0L224 0l0 128c0 17.7 14.3 32 32 32l128 0 0 288c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 64zm384 64l-128 0L256 0 384 128z\"/></svg>";
-                    // If the item has children, it's a directory.
+            onSingleTapped: (eventPoint, button) => {
+                switch (button) {
+                case Qt.LeftButton:
                     if (treeDelegate.hasChildren) {
-                        return treeDelegate.expanded ?
-                            folderOpen : folderClosed;
+                        root.toggleExpanded(treeDelegate.row);
                     } else {
-                        return file
+                        // If this model item doesn't have children, it means it's representing a file.
+                        root.fileClicked(treeDelegate.filePath);
                     }
-                }
-
-                x: treeDelegate.leftMargin + (treeDelegate.depth * treeDelegate.indentation)
-                anchors.verticalCenter: parent.verticalCenter
-                source: setSourceImage()
-                sourceSize.width: 15
-                sourceSize.height: 15
-                fillMode: Image.PreserveAspectFit
-
-                smooth: true
-                antialiasing: true
-                asynchronous: true
-            }
-
-            contentItem: Text {
-                text: treeDelegate.fileName
-                color: RustColors.explorer_text
-            }
-
-            background: Rectangle {
-                // TODO: Fix flickering from color transition on states here.
-                color: (treeDelegate.index === fileSystemTreeView.lastIndex)
-                    ? RustColors.explorer_text_selected
-                    : (hoverHandler.hovered ? RustColors.explorer_hovered : "transparent")
-                radius: 2.5
-                opacity: hoverHandler.hovered ? 0.75 : 1.0
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 300
-                    }
+                    break;
+                case Qt.RightButton:
+                    contextMenu.popup();
+                    break;
                 }
             }
+        }
+        ClideMenu {
+            id: contextMenu
 
-            HoverHandler {
-                id: hoverHandler
-            }
+            ClideMenuItem {
+                action: Action {
+                    enabled: treeDelegate.hasChildren
+                    text: qsTr("Set root")
 
-            TapHandler {
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                onSingleTapped: (eventPoint, button) => {
-                    switch (button) {
-                        case Qt.LeftButton:
-                            fileSystemTreeView.toggleExpanded(treeDelegate.row)
-                            fileSystemTreeView.lastIndex = treeDelegate.index
-                            // If this model item doesn't have children, it means it's
-                            // representing a file.
-                            if (!treeDelegate.hasChildren)
-                                root.fileClicked(treeDelegate.filePath)
-                            break;
-                        case Qt.RightButton:
-                            if (treeDelegate.hasChildren)
-                                contextMenu.popup();
-                            break;
-                    }
-                }
-            }
-
-            Menu {
-                id: contextMenu
-                Action {
-                    text: qsTr("Set as root index")
                     onTriggered: {
-                        console.log("Setting directory: " + treeDelegate.filePath)
-                        FileSystem.setDirectory(treeDelegate.filePath)
+                        Logger.debug("Setting new root directory: " + treeDelegate.filePath);
+                        root.rootDirectory = treeDelegate.filePath;
                     }
                 }
-                Action {
-                    text: qsTr("Reset root index")
+            }
+            ClideMenuItem {
+                action: Action {
+                    text: qsTr("Reset root")
+
                     onTriggered: {
-                        FileSystem.setDirectory("")
+                        Logger.log("Resetting root directory: " + root.originalRootDirectory);
+                        root.rootDirectory = root.originalRootDirectory;
                     }
                 }
             }
         }
+    }
+    selectionModel: ItemSelectionModel {
+    }
 
-        // Provide our own custom ScrollIndicator for the TreeView.
-        ScrollIndicator.vertical: ScrollIndicator {
-            active: true
-            implicitWidth: 15
+    FontLoader {
+        id: localFont
 
-            contentItem: Rectangle {
-                implicitWidth: 6
-                implicitHeight: 6
-
-                color: RustColors.scrollbar
-                opacity: fileSystemTreeView.movingVertically ? 0.5 : 0.0
-
-                Behavior on opacity {
-                    OpacityAnimator {
-                        duration: 500
-                    }
-                }
-            }
-        }
+        source: "qrc:/fonts/saucecodepro-xlight.ttf"
     }
 }

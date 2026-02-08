@@ -19,6 +19,31 @@ And of course, [Rust](https://www.rust-lang.org/tools/install).
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
+This project requires at least Qt 6.7.3 To check your Qt version
+
+```bash
+qmake6 -query QT_VERSION
+```
+
+Use the [Qt Installer](https://www.qt.io/development/download) to download and install the Qt version of your choice.
+If the installer is run with `sudo`, the default install location is `/opt/Qt`, otherwise Qt will be installed into your home directory.
+
+**You must set the QMAKE variable before building clide**. This should be a path to `qmake6` binary installed on your system.
+The following export is the default installation path for Qt 6.7 on Ubuntu 24.04
+
+```bash
+export QMAKE=$HOME/Qt/6.7.3/gcc_64/bin/qmake6
+export LD_LIBRARY_PATH=$HOME/Qt/6.7.3/gcc_64/lib
+```
+
+Though environment variables set using `export` will take precedence, these can also be set in [.cargo/config.toml](./.cargo/config.toml) for conveinence
+
+```toml
+[env]
+QMAKE="/opt/Qt/6.7.3/gcc_64/bin/qmake6"
+LD_LIBRARY_PATH="/opt/Qt/6.7.3/gcc_64/lib"
+```
+
 ## Usage 
 
 To install and run clide
@@ -82,6 +107,8 @@ cargo run
 clide
 ```
 
+![image](./resources/gui.png)
+
 ## Development
 
 It's recommended to use RustRover or Qt Creator for development.
@@ -126,6 +153,7 @@ Some helpful links for reading up on QML if you're just getting started.
 * [All QML Controls Types](https://doc.qt.io/qt-6/qtquick-controls-qmlmodule.html)
 * [KDAB CXX-Qt Book](https://kdab.github.io/cxx-qt/book/)
 * [github.com/KDAB/cxx-qt](https://github.com/KDAB/cxx-qt)
+* [QML and C++ Intergration](https://doc.qt.io/qt-6/qtqml-cppintegration-overview.html)
 
 
 ### Plugins

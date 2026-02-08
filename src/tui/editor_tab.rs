@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026, Shaun Reed <shaunrd0@gmail.com>
+//
+// SPDX-License-Identifier: GNU General Public License v3.0 or later
+
 use crate::tui::component::{Action, Component, Focus, FocusState};
 use crate::tui::editor::Editor;
 use anyhow::{Context, Result, anyhow};

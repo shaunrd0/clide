@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026, Shaun Reed <shaunrd0@gmail.com>
+//
+// SPDX-License-Identifier: GNU General Public License v3.0 or later
+
 use crate::tui::about::About;
 use crate::tui::app::AppComponent::{AppEditor, AppExplorer, AppLogger};
 use crate::tui::component::{Action, Component, Focus, FocusState, Visibility, VisibleState};

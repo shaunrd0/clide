@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026, Shaun Reed <shaunrd0@gmail.com>
+//
+// SPDX-License-Identifier: GNU General Public License v3.0 or later
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -8,28 +12,32 @@ import clide.module 1.0
 ApplicationWindow {
     id: appWindow
 
+    required property string appContextPath
+
     height: 800
-    title: "CLIDE"
+    title: "Clide"
     visible: true
     width: 1200
-
-    required property string appContextPath
 
     menuBar: ClideMenuBar {
     }
 
     Rectangle {
-        anchors.fill: parent
-        color: RustColors.gutter
-    }
+        color: RustColors.menubar
+        width: appView.implicitWidth
+        height: appView.implicitHeight
 
-    MessageDialog {
-        id: errorDialog
+        ClideApplicationView {
+            id: appView
+            projectDir: appWindow.appContextPath
+            implicitHeight: appWindow.height
+            implicitWidth: appWindow.width
 
-        title: qsTr("Error")
-    }
-    ClideProjectView {
-        projectDir: appWindow.appContextPath
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: 20
+            anchors.topMargin: 10
+        }
     }
 }
 

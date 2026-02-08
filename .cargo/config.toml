@@ -1,3 +1,6 @@
-
 [build]
 rustflags = [ "-C", "link-arg=-fuse-ld=lld", ]
+
+[env]
+QMAKE="/opt/Qt/6.7.3/gcc_64/bin/qmake6"
+LD_LIBRARY_PATH="/opt/Qt/6.7.3/gcc_64/lib"

@@ -1,0 +1,9 @@
+ClideScrollBar ClideScrollBar.qml
+ClideHandle ClideHandle.qml
+ClideMenu ClideMenu.qml
+ClideMenuItem ClideMenuItem.qml
+ClideBreadCrumbs ClideBreadCrumbs.qml
+ClideAboutWindow ClideAboutWindow.qml
+ClideEditor ClideEditor.qml
+ClideLogger ClideLogger.qml
+ClideMenuBar ClideMenuBar.qml
