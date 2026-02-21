@@ -18,3 +18,8 @@ runs:
       uses: jurplel/install-qt-action@v4
       with:
         version: ${{ inputs.qt-version }}
+
+    - name: Set QMAKE
+      run: |
+        echo "QMAKE=/home/runner/work/clide/${{ inputs.qt-version }}/gcc_64/bin/qmake" >> $GITHUB_ENV
+      shell: bash
