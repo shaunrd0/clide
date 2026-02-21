@@ -3,12 +3,10 @@ name: Build
 on:
   push:
     branches:
-      - '*'
-    # Runs on tag so the release workflow can use its artifact.
+      - main
     tags:
-      - "v*"
+      - 'v*'
   pull_request:
-  workflow_dispatch:
 
 jobs:
   Build:
@@ -18,6 +16,11 @@ jobs:
       - name: Install Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+      - name: Install Python
+        run: |
+          sudo apt update - y
+          sudo apt install python3 -y
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
