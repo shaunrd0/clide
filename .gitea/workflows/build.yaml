@@ -19,6 +19,7 @@ jobs:
 
       - name: Install Python
         run: |
+          apt update -y
           apt install -y \
             python3 \
             python3-pip \
