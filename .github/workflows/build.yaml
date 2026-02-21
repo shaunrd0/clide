@@ -9,42 +9,53 @@ on:
   pull_request:
 
 jobs:
+  env:
+    QT_VERSION: 6.7.3
   Build:
     name: Build
     runs-on: ubuntu-latest
-    env:
-      QT_VERSION: 6.7.3
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install apt packages
-        run: |
-          sudo apt update -y
-          sudo apt install -y \
-            build-essential \
-            cmake \
-            curl \
-            libgl1-mesa-dev \
-            python3 \
-            python3-pip
+      # Define reusable steps.
+      - &setup
+        - name: Install apt packages
+          run: |
+            sudo apt update -y
+            sudo apt install -y \
+              build-essential \
+              cmake \
+              curl \
+              libgl1-mesa-dev \
+              python3 \
+              python3-pip
 
-      - name: Install aqtinstall
-        run: |
-          python3 -m pip install aqtinstall
+        - name: Install aqtinstall
+          run: |
+            python3 -m pip install aqtinstall
 
-      - name: Install Qt
-        run: |
-          aqt install-qt linux desktop $QT_VERSION linux_gcc_64
+        - name: Install Qt
+          run: |
+            aqt install-qt linux desktop $QT_VERSION linux_gcc_64
 
-      - name: Set QMAKE
-        run: |
-          export QMAKE="$GITHUB_WORKSPACE/$QT_VERSION/gcc_64/bin/qmake"
-          echo "QMAKE=$QMAKE" >> $GITHUB_ENV
+        - name: Set QMAKE
+          run: |
+            export QMAKE="$GITHUB_WORKSPACE/$QT_VERSION/gcc_64/bin/qmake"
+            echo "QMAKE=$QMAKE" >> $GITHUB_ENV
+      # Execute the steps.
+      - *setup
 
       - name: Build clide
         run: |
-          echo "Using qmake: $QMAKE"
           cargo b --release
+
+  Test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      # Use the same setup steps from the Build job.
+      - *setup
 
       - name: Test libclide
         run: |
@@ -53,3 +64,19 @@ jobs:
       - name: Test clide
         run: |
           cargo test
+
+  Lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      # Use the same setup steps from the Build job.
+      - *setup
+
+      - name: Lint libclide
+        run: |
+          cargo clippy --manifest-path libclide/Cargo.toml
+
+      - name: Lint clide
+        run: |
+          cargo clippy
