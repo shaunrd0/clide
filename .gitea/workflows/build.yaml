@@ -11,7 +11,10 @@ on:
 jobs:
   Build:
     name: Build
-    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
+      volumes:
+        - build-artifacts:/workspace/artifacts
     env:
       QT_VERSION: 6.7.3
       PATH: $HOME/.cargo/bin:$PATH
@@ -47,6 +50,19 @@ jobs:
         run: |
           . "$HOME/.cargo/env"
           cargo b --release
+
+      - name: Copy build artifacts
+        run: cp -r target/ /workspace/artifacts/
+
+  Test:
+    name: Test
+    container:
+      image: ubuntu:24.04
+      volumes:
+        - build-artifacts:/workspace/artifacts
+    steps:
+      - name: Copy build artifacts
+        run: cp -r /workspace/artifacts/target/ .
 
       - name: Test libclide
         run: |
