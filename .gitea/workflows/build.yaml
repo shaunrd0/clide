@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       QT_VERSION: 6.7.3
+      PATH: $HOME/.cargo/bin:$PATH
     steps:
       - uses: actions/checkout@v6
 
@@ -42,7 +43,7 @@ jobs:
 
       - name: Build clide
         env:
-          QMAKE: ${{ github.workspace }}/${{ env.QT_VERSION }}/gcc_64/bin/qmake
+          QMAKE: ${{ env.CI_WORKSPACE }}/${{ env.QT_VERSION }}/gcc_64/bin/qmake
         run: |
           . "$HOME/.cargo/env"
           cargo b --release
