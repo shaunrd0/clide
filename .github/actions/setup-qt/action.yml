@@ -1,0 +1,25 @@
+name: "Setup Qt"
+description: "Install clide dependencies"
+inputs:
+  qt-version:
+    description: "Qt version to install"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install apt packages
+      run: |
+        sudo apt update -y
+        sudo apt install -y build-essential cmake curl libgl1-mesa-dev python3 python3-pip
+      shell: bash
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: ${{ inputs.qt-version }}
+
+    - name: Set QMAKE
+      run: |
+        echo "QMAKE=$GITHUB_WORKSPACE/${{ inputs.qt-version }}/gcc_64/bin/qmake" >> $GITHUB_ENV
+      shell: bash

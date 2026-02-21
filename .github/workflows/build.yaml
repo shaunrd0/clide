@@ -18,30 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # Define reusable steps.
-      - &setup
-        - name: Install apt packages
-          run: |
-            sudo apt update -y
-            sudo apt install -y \
-              build-essential \
-              cmake \
-              curl \
-              libgl1-mesa-dev \
-              python3 \
-              python3-pip
-
-        - name: Install Qt
-          uses: jurplel/install-qt-action@v4
-          with:
-            version: $QT_VERSION
-
-        - name: Set QMAKE
-          run: |
-            export QMAKE="$GITHUB_WORKSPACE/$QT_VERSION/gcc_64/bin/qmake"
-            echo "QMAKE=$QMAKE" >> $GITHUB_ENV
-      # Execute the steps.
-      - *setup
+      - name: Setup Qt
+        uses: ./.github/actions/setup-qt
+        with:
+          qt-version: ${{ env.QT_VERSION }}
 
       - name: Build clide
         run: |
@@ -52,8 +32,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      # Use the same setup steps from the Build job.
-      - *setup
+
+      - name: Setup Qt
+        uses: ./.github/actions/setup-qt
+        with:
+          qt-version: ${{ env.QT_VERSION }}
 
       - name: Test libclide
         run: |
@@ -68,8 +51,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      # Use the same setup steps from the Build job.
-      - *setup
+
+      - name: Setup Qt
+        uses: ./.github/actions/setup-qt
+        with:
+          qt-version: ${{ env.QT_VERSION }}
 
       - name: Lint libclide
         run: |
