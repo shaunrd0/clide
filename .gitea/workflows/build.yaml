@@ -30,7 +30,10 @@ jobs:
       - name: Install aqtinstall
         run: |
           python3 -m pip install aqtinstall
-          aqt install-qt linux desktop 6.7.3 gcc_64
+
+      - name: Install Qt
+        run: |
+          aqt install-qt linux desktop 6.7.3 linux_gcc_64
 
       #      - name: Install Qt
       #        uses: jurplel/install-qt-action@v4
