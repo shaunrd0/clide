@@ -17,7 +17,7 @@ jobs:
         - build-artifacts:/workspace/artifacts
     env:
       QT_VERSION: 6.7.3
-      PATH: $HOME/.cargo/bin:$PATH
+      QMAKE: ${{ env.CI_WORKSPACE }}/${{ env.QT_VERSION }}/gcc_64/bin/qmake
     steps:
       - uses: actions/checkout@v6
 
@@ -45,8 +45,6 @@ jobs:
           aqt install-qt linux desktop $QT_VERSION linux_gcc_64
 
       - name: Build clide
-        env:
-          QMAKE: ${{ env.CI_WORKSPACE }}/${{ env.QT_VERSION }}/gcc_64/bin/qmake
         run: |
           . "$HOME/.cargo/env"
           cargo b --release
