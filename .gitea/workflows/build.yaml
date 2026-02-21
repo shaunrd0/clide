@@ -12,6 +12,8 @@ jobs:
   Build:
     name: Build
     runs-on: ubuntu-latest
+    env:
+      QT_VERSION: 6.7.3
     steps:
       - name: Install Rust
         run: |
@@ -33,14 +35,10 @@ jobs:
 
       - name: Install Qt
         run: |
-          aqt install-qt linux desktop 6.7.3 linux_gcc_64
-
-      #      - name: Install Qt
-      #        uses: jurplel/install-qt-action@v4
-      #        with:
-      #          version: '6.7.3'
+          aqt install-qt linux desktop $QT_VERSION linux_gcc_64
 
       - name: Build clide
+        env:
+          QMAKE: ${{ github.workspace }}/$QT_VERSION/gcc_64/bin/qmake
         run: |
-          cd clide
           cargo b
