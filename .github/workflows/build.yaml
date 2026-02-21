@@ -1,0 +1,67 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+  pull_request:
+
+env:
+  QT_VERSION: 6.7.3
+
+jobs:
+  Build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Qt
+        uses: ./.github/actions/setup-qt
+        with:
+          qt-version: ${{ env.QT_VERSION }}
+
+      - name: Build libclide
+        run: |
+          cargo b -p libclide --release
+      - name: Build clide
+        run: |
+          cargo b --release
+
+  Test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Qt
+        uses: ./.github/actions/setup-qt
+        with:
+          qt-version: ${{ env.QT_VERSION }}
+
+      - name: Test libclide
+        run: |
+          cargo test -p libclide
+      - name: Test clide
+        run: |
+          cargo test
+
+  Lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Qt
+        uses: ./.github/actions/setup-qt
+        with:
+          qt-version: ${{ env.QT_VERSION }}
+
+      - name: Lint libclide
+        run: |
+          cargo clippy --manifest-path libclide/Cargo.toml -- -D warnings
+      - name: Lint clide
+        run: |
+          cargo clippy -- -D warnings
