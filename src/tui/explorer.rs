@@ -17,13 +17,6 @@ use std::path::{Path, PathBuf};
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 
 #[derive(Debug)]
-pub struct Explorer<'a> {
-    root_path: PathBuf,
-    tree_items: TreeItem<'a, String>,
-    tree_state: TreeState<String>,
-    pub(crate) component_state: ComponentState,
-}
-
 struct EntryMeta {
     abs_path: String,
     file_name: String,
@@ -67,13 +60,21 @@ impl EntryMeta {
     }
 }
 
+#[derive(Debug)]
+pub struct Explorer<'a> {
+    root_path: EntryMeta,
+    tree_items: TreeItem<'a, String>,
+    tree_state: TreeState<String>,
+    pub(crate) component_state: ComponentState,
+}
+
 impl<'a> Explorer<'a> {
     pub const ID: &'static str = "Explorer";
 
     pub fn new(path: &PathBuf) -> Result<Self> {
         trace!(target:Self::ID, "Building {}", Self::ID);
         let explorer = Explorer {
-            root_path: path.to_owned(),
+            root_path: EntryMeta::new(&path)?,
             tree_items: Self::build_tree_from_path(path.to_owned())?,
             tree_state: TreeState::default(),
             component_state: ComponentState::default().with_help_text(concat!(
@@ -140,15 +141,11 @@ impl<'a> Explorer<'a> {
 impl<'a> Widget for &mut Explorer<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         if let Ok(tree) = Tree::new(&self.tree_items.children()) {
-            let file_name = self
-                .root_path
-                .file_name()
-                .unwrap_or_else(|| OsStr::new("Unknown"));
             StatefulWidget::render(
                 tree.block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title(file_name.to_string_lossy())
+                        .title(self.root_path.file_name.clone())
                         .border_style(Style::default().fg(self.component_state.get_active_color()))
                         .title_style(Style::default().fg(Color::Green))
                         .title_alignment(Alignment::Center),
