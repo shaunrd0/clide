@@ -17,7 +17,7 @@ jobs:
         - build-artifacts:/workspace/artifacts
     env:
       QT_VERSION: 6.7.3
-      QMAKE: ${{ env.CI_WORKSPACE }}/${{ env.QT_VERSION }}/gcc_64/bin/qmake
+      QMAKE: ${{ github.workspace }}/${{ env.QT_VERSION }}/gcc_64/bin/qmake
     steps:
       - uses: actions/checkout@v6
 
