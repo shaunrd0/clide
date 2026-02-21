@@ -23,6 +23,9 @@ jobs:
         with:
           qt-version: ${{ env.QT_VERSION }}
 
+      - name: Build libclide
+        run: |
+          cargo b -p libclide --release
       - name: Build clide
         run: |
           cargo b --release
@@ -41,7 +44,6 @@ jobs:
       - name: Test libclide
         run: |
           cargo test -p libclide
-
       - name: Test clide
         run: |
           cargo test
@@ -59,8 +61,7 @@ jobs:
 
       - name: Lint libclide
         run: |
-          cargo clippy --manifest-path libclide/Cargo.toml
-
+          cargo clippy --manifest-path libclide/Cargo.toml -- -D warnings
       - name: Lint clide
         run: |
-          cargo clippy
+          cargo clippy -- -D warnings
