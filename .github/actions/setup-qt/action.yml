@@ -18,9 +18,3 @@ runs:
       uses: jurplel/install-qt-action@v4
       with:
         version: ${{ inputs.qt-version }}
-
-    - run: |
-        echo "PATH: $PATH"
-        which qmake || true
-        which qmake6 || true
-      shell: bash
