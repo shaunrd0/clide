@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       QT_VERSION: 6.7.3
-      QMAKE: ${{ github.workspace }}/${{ env.QT_VERSION }}/gcc_64/bin/qmake
     steps:
       - uses: actions/checkout@v6
 
@@ -37,8 +36,14 @@ jobs:
         run: |
           aqt install-qt linux desktop $QT_VERSION linux_gcc_64
 
+      - name: Set QMAKE
+        run: |
+          export QMAKE="$GITHUB_WORKSPACE/$QT_VERSION/gcc_64/bin/qmake"
+          echo "QMAKE=$QMAKE" >> $GITHUB_ENV
+
       - name: Build clide
         run: |
+          echo "Using qmake: $QMAKE"
           cargo b --release
 
       - name: Test libclide
