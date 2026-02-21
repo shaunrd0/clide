@@ -19,7 +19,8 @@ runs:
       with:
         version: ${{ inputs.qt-version }}
 
-    - name: Set QMAKE
-      run: |
-        echo "QMAKE=/home/runner/work/clide/${{ inputs.qt-version }}/gcc_64/bin/qmake" >> $GITHUB_ENV
+    - run: |
+        echo "PATH: $PATH"
+        which qmake || true
+        which qmake6 || true
       shell: bash
