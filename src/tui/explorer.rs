@@ -4,7 +4,7 @@
 
 use crate::tui::component::{Action, Component, ComponentState, Focus, FocusState};
 use anyhow::{Context, Result, bail};
-use log::trace;
+use log::{info, trace};
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::layout::{Alignment, Position, Rect};
@@ -18,10 +18,53 @@ use tui_tree_widget::{Tree, TreeItem, TreeState};
 
 #[derive(Debug)]
 pub struct Explorer<'a> {
-    pub(crate) root_path: PathBuf,
+    root_path: PathBuf,
     tree_items: TreeItem<'a, String>,
     tree_state: TreeState<String>,
     pub(crate) component_state: ComponentState,
+}
+
+struct EntryMeta {
+    abs_path: String,
+    file_name: String,
+    is_dir: bool,
+}
+
+impl EntryMeta {
+    /// Normalizes a path, returning an absolute from the root of the filesystem.
+    /// Does not resolve symlinks and extracts `./` or `../` segments.
+    fn normalize<P: AsRef<Path>>(p: P) -> PathBuf {
+        let path = p.as_ref();
+        let mut buf = PathBuf::new();
+
+        for comp in path.components() {
+            match comp {
+                std::path::Component::ParentDir => {
+                    buf.pop();
+                }
+                std::path::Component::CurDir => {}
+                _ => buf.push(comp),
+            }
+        }
+
+        buf
+    }
+
+    fn new<P: AsRef<Path>>(p: P) -> Result<Self> {
+        let path = p.as_ref();
+        let is_dir = path.is_dir();
+        let abs_path = Self::normalize(&path).to_string_lossy().to_string();
+        let file_name = Path::new(&abs_path)
+            .file_name()
+            .context(format!("Failed to get file name for path: {abs_path:?}"))?
+            .to_string_lossy()
+            .to_string();
+        Ok(EntryMeta {
+            abs_path,
+            file_name,
+            is_dir,
+        })
+    }
 }
 
 impl<'a> Explorer<'a> {
@@ -41,46 +84,46 @@ impl<'a> Explorer<'a> {
         Ok(explorer)
     }
 
-    fn build_tree_from_path(path: PathBuf) -> Result<TreeItem<'static, String>> {
+    /// Builds the file tree from a path using recursion.
+    /// The identifiers used for the TreeItems are normalized. Symlinks are not resolved.
+    /// Resolving symlinks would cause collisions on the TreeItem unique identifiers within the set.
+    fn build_tree_from_path<P: AsRef<Path>>(p: P) -> Result<TreeItem<'static, String>> {
+        let path = p.as_ref();
         let mut children = vec![];
-        let clean_path = fs::canonicalize(path)?;
-        if let Ok(entries) = fs::read_dir(&clean_path) {
+        let path_meta = EntryMeta::new(path)?;
+        if let Ok(entries) = fs::read_dir(&path_meta.abs_path) {
             let mut paths = entries
                 .map(|res| res.map(|e| e.path()))
                 .collect::<Result<Vec<_>, std::io::Error>>()
                 .context(format!(
                     "Failed to build vector of paths under directory: {:?}",
-                    clean_path
+                    &path_meta.abs_path
                 ))?;
             paths.sort();
-            for path in paths {
-                if path.is_dir() {
-                    children.push(Self::build_tree_from_path(path)?);
+            for entry_path in paths {
+                let entry_meta = EntryMeta::new(&entry_path)?;
+                if entry_meta.is_dir {
+                    children.push(Self::build_tree_from_path(&entry_meta.abs_path)?);
                 } else {
-                    if let Ok(path) = fs::canonicalize(&path) {
-                        let path_str = path.to_string_lossy().to_string();
-                        children.push(TreeItem::new_leaf(
-                            path_str + uuid::Uuid::new_v4().to_string().as_str(),
-                            path.file_name()
-                                .context("Failed to get file name from path.")?
-                                .to_string_lossy()
-                                .to_string(),
-                        ));
-                    }
+                    children.push(TreeItem::new_leaf(
+                        entry_meta.abs_path.clone(),
+                        entry_meta.file_name.clone(),
+                    ));
                 }
             }
         }
 
+        // Note: The first argument is a unique identifier, where no 2 TreeItems may share the same.
+        // For a file tree this is fine because we shouldn't list the same object twice.
         TreeItem::new(
-            clean_path.to_string_lossy().to_string() + uuid::Uuid::new_v4().to_string().as_str(),
-            clean_path
-                .file_name()
-                .context(format!("Failed to get file name from path: {clean_path:?}"))?
-                .to_string_lossy()
-                .to_string(),
+            path_meta.abs_path.clone(),
+            path_meta.file_name.clone(),
             children,
         )
-        .context(format!("Failed to build tree from path: {clean_path:?}"))
+        .context(format!(
+            "Failed to build tree from path: {:?}",
+            path_meta.abs_path
+        ))
     }
 
     pub fn selected(&self) -> Result<String> {
