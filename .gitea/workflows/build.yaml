@@ -19,8 +19,8 @@ jobs:
 
       - name: Install Python
         run: |
-          sudo apt update - y
-          sudo apt install python3 -y
+          apt update -y
+          apt install python3 -y
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
