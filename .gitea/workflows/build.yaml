@@ -41,4 +41,5 @@ jobs:
         env:
           QMAKE: ${{ github.workspace }}/$QT_VERSION/gcc_64/bin/qmake
         run: |
+          . "$HOME/.cargo/env"
           cargo b
