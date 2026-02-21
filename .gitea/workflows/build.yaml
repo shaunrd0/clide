@@ -12,7 +12,7 @@ jobs:
   Build:
     name: Build
     container:
-      image: ubuntu:latest
+      image: ubuntu:22.04
       volumes:
         - build-artifacts:/workspace/artifacts
     env:
@@ -55,7 +55,7 @@ jobs:
   Test:
     name: Test
     container:
-      image: ubuntu:latest
+      image: ubuntu:22.04
       volumes:
         - build-artifacts:/workspace/artifacts
     steps:
