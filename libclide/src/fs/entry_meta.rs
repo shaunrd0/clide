@@ -35,7 +35,7 @@ impl EntryMeta {
     pub fn new<P: AsRef<Path>>(p: P) -> Result<Self> {
         let path = p.as_ref();
         let is_dir = path.is_dir();
-        let abs_path = Self::normalize(&path).to_string_lossy().to_string();
+        let abs_path = Self::normalize(path).to_string_lossy().to_string();
         let file_name = Path::new(&abs_path)
             .file_name()
             .context(format!("Failed to get file name for path: {abs_path:?}"))?
