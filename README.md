@@ -1,5 +1,7 @@
 # CLIDE
 
+[![Build](https://git.shaunreed.com/shaunrd0/clide/actions/workflows/build.yaml/badge.svg)](https://git.shaunreed.com/shaunrd0/clide/workflows/build.yml)
+
 CLIDE is an extendable command-line driven development environment written in Rust using the Qt UI framework that supports both full and headless Linux environments.
 The GUI is written in QML compiled through Rust using the cxx-qt crate, while the TUI was implemented using the ratatui crate.
 
