@@ -49,8 +49,10 @@ jobs:
 
       - name: Test libclide
         run: |
+          . "$HOME/.cargo/env"
           cargo test -p libclide
 
       - name: Test clide
         run: |
+          . "$HOME/.cargo/env"
           cargo test
