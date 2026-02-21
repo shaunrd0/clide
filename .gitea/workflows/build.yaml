@@ -46,4 +46,11 @@ jobs:
         run: |
           . "$HOME/.cargo/env"
           cargo b --release
+
+      - name: Test libclide
+        run: |
+          cargo test -p libclide
+
+      - name: Test clide
+        run: |
           cargo test
