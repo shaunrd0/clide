@@ -4,61 +4,17 @@
 
 use crate::tui::component::{Action, Component, ComponentState, Focus, FocusState};
 use anyhow::{Context, Result, bail};
-use log::{info, trace};
+use log::{trace};
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::layout::{Alignment, Position, Rect};
 use ratatui::prelude::Style;
 use ratatui::style::{Color, Modifier};
 use ratatui::widgets::{Block, Borders, StatefulWidget, Widget};
-use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tui_tree_widget::{Tree, TreeItem, TreeState};
-
-#[derive(Debug)]
-struct EntryMeta {
-    abs_path: String,
-    file_name: String,
-    is_dir: bool,
-}
-
-impl EntryMeta {
-    /// Normalizes a path, returning an absolute from the root of the filesystem.
-    /// Does not resolve symlinks and extracts `./` or `../` segments.
-    fn normalize<P: AsRef<Path>>(p: P) -> PathBuf {
-        let path = p.as_ref();
-        let mut buf = PathBuf::new();
-
-        for comp in path.components() {
-            match comp {
-                std::path::Component::ParentDir => {
-                    buf.pop();
-                }
-                std::path::Component::CurDir => {}
-                _ => buf.push(comp),
-            }
-        }
-
-        buf
-    }
-
-    fn new<P: AsRef<Path>>(p: P) -> Result<Self> {
-        let path = p.as_ref();
-        let is_dir = path.is_dir();
-        let abs_path = Self::normalize(&path).to_string_lossy().to_string();
-        let file_name = Path::new(&abs_path)
-            .file_name()
-            .context(format!("Failed to get file name for path: {abs_path:?}"))?
-            .to_string_lossy()
-            .to_string();
-        Ok(EntryMeta {
-            abs_path,
-            file_name,
-            is_dir,
-        })
-    }
-}
+use libclide::fs::entry_meta::EntryMeta;
 
 #[derive(Debug)]
 pub struct Explorer<'a> {
