@@ -18,9 +18,9 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
       - name: Install Python
-        run: |
-          apt update -y
-          apt install python3 -y
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
