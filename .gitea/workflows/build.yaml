@@ -25,11 +25,12 @@ jobs:
         run: |
           apt update -y
           apt install -y \
-            python3 \
-            python3-pip \
             build-essential \
             cmake \
             curl
+            libgl1-mesa-dev \
+            python3 \
+            python3-pip \
 
       - name: Install aqtinstall
         run: |
@@ -45,3 +46,4 @@ jobs:
         run: |
           . "$HOME/.cargo/env"
           cargo b --release
+          cargo test
