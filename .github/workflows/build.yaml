@@ -18,14 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install Rust
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
       - name: Install apt packages
         run: |
-          apt update -y
-          apt install -y \
+          sudo apt update -y
+          sudo apt install -y \
             build-essential \
             cmake \
             curl \
@@ -43,15 +39,12 @@ jobs:
 
       - name: Build clide
         run: |
-          . "$HOME/.cargo/env"
           cargo b --release
 
       - name: Test libclide
         run: |
-          . "$HOME/.cargo/env"
           cargo test -p libclide
 
       - name: Test clide
         run: |
-          . "$HOME/.cargo/env"
           cargo test
