@@ -10,11 +10,8 @@ on:
 
 jobs:
   Build:
+    runs-on: ubuntu-latest
     name: Build
-    container:
-      image: ubuntu:24.04
-      volumes:
-        - build-artifacts:/workspace/artifacts
     env:
       QT_VERSION: 6.7.3
       QMAKE: ${{ env.CI_WORKSPACE }}/${{ env.QT_VERSION }}/gcc_64/bin/qmake
@@ -49,19 +46,10 @@ jobs:
           . "$HOME/.cargo/env"
           cargo b --release
 
-      - name: Copy build artifacts
-        run: cp -r target/ /workspace/artifacts/
-
   Test:
     name: Test
-    container:
-      image: ubuntu:24.04
-      volumes:
-        - build-artifacts:/workspace/artifacts
+    runs-on: ubuntu-latest
     steps:
-      - name: Copy build artifacts
-        run: cp -r /workspace/artifacts/target/ .
-
       - name: Test libclide
         run: |
           . "$HOME/.cargo/env"
