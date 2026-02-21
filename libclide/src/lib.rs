@@ -1,14 +1,5 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+// SPDX-FileCopyrightText: 2026, Shaun Reed <shaunrd0@gmail.com>
+//
+// SPDX-License-Identifier: GNU General Public License v3.0 or later
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod fs;
