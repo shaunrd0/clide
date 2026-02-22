@@ -8,7 +8,6 @@ use crate::tui::editor_tab::EditorTab;
 use crate::tui::explorer::Explorer;
 use crate::tui::logger::Logger;
 use crate::tui::menu_bar::MenuBar;
-use AppComponent::AppMenuBar;
 use anyhow::{Context, Result};
 use log::{error, info, trace};
 use ratatui::DefaultTerminal;
@@ -26,9 +25,9 @@ use std::time::Duration;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AppComponent {
     Editor,
-    AppExplorer,
-    AppLogger,
-    AppMenuBar,
+    Explorer,
+    Logger,
+    MenuBar,
 }
 
 pub struct App<'a> {
@@ -95,9 +94,9 @@ impl<'a> App<'a> {
                     "Failed to get current Editor while getting widget help text".to_string()
                 }
             },
-            AppComponent::AppExplorer => self.explorer.component_state.help_text.clone(),
-            AppComponent::AppLogger => self.logger.component_state.help_text.clone(),
-            AppComponent::AppMenuBar => self.menu_bar.component_state.help_text.clone(),
+            AppComponent::Explorer => self.explorer.component_state.help_text.clone(),
+            AppComponent::Logger => self.logger.component_state.help_text.clone(),
+            AppComponent::MenuBar => self.menu_bar.component_state.help_text.clone(),
         };
         Paragraph::new(
             concat!(
@@ -137,9 +136,9 @@ impl<'a> App<'a> {
                 }
                 Some(editor) => editor.component_state.set_focus(Focus::Active),
             },
-            AppComponent::AppExplorer => self.explorer.component_state.set_focus(Focus::Active),
-            AppComponent::AppLogger => self.logger.component_state.set_focus(Focus::Active),
-            AppComponent::AppMenuBar => self.menu_bar.component_state.set_focus(Focus::Active),
+            AppComponent::Explorer => self.explorer.component_state.set_focus(Focus::Active),
+            AppComponent::Logger => self.logger.component_state.set_focus(Focus::Active),
+            AppComponent::MenuBar => self.menu_bar.component_state.set_focus(Focus::Active),
         }
         self.last_active = focus;
     }
@@ -255,9 +254,9 @@ impl<'a> Component for App<'a> {
         // Handle events for all components.
         let action = match self.last_active {
             AppComponent::Editor => self.editor_tab.handle_event(event.clone())?,
-            AppComponent::AppExplorer => self.explorer.handle_event(event.clone())?,
-            AppComponent::AppLogger => self.logger.handle_event(event.clone())?,
-            AppMenuBar => self.menu_bar.handle_event(event.clone())?,
+            AppComponent::Explorer => self.explorer.handle_event(event.clone())?,
+            AppComponent::Logger => self.logger.handle_event(event.clone())?,
+            AppComponent::MenuBar => self.menu_bar.handle_event(event.clone())?,
         };
 
         // Components should always handle mouse events for click interaction.
@@ -348,7 +347,7 @@ impl<'a> Component for App<'a> {
                 kind: KeyEventKind::Press,
                 state: _state,
             } => {
-                self.change_focus(AppComponent::AppExplorer);
+                self.change_focus(AppComponent::Explorer);
                 Ok(Action::Handled)
             }
             KeyEvent {
@@ -366,7 +365,7 @@ impl<'a> Component for App<'a> {
                 kind: KeyEventKind::Press,
                 state: _state,
             } => {
-                self.change_focus(AppComponent::AppLogger);
+                self.change_focus(AppComponent::Logger);
                 Ok(Action::Handled)
             }
             KeyEvent {
@@ -375,7 +374,7 @@ impl<'a> Component for App<'a> {
                 kind: KeyEventKind::Press,
                 state: _state,
             } => {
-                self.change_focus(AppMenuBar);
+                self.change_focus(AppComponent::MenuBar);
                 Ok(Action::Handled)
             }
             KeyEvent {
