@@ -7,6 +7,7 @@
 use crate::tui::component::Focus::Inactive;
 use Focus::Active;
 use anyhow::Result;
+use libclide::theme::colors::Colors;
 use log::trace;
 use ratatui::crossterm::event::{Event, KeyEvent, MouseEvent};
 use ratatui::style::Color;
@@ -98,8 +99,8 @@ pub enum Focus {
 impl Focus {
     pub(crate) fn get_active_color(&self) -> Color {
         match self {
-            Active => Color::LightYellow,
-            Inactive => Color::White,
+            Active => Color::from_u32(Colors::css_to_u32(Colors::ACTIVE)),
+            Inactive => Color::from_u32(Colors::css_to_u32(Colors::INACTIVE)),
         }
     }
 }
