@@ -63,7 +63,7 @@ impl<'a> Explorer<'a> {
                 } else {
                     children.push(TreeItem::new_leaf(
                         entry_meta.abs_path.clone(),
-                        entry_meta.file_name.clone(),
+                        format!("{} {}", entry_meta.icon.icon, entry_meta.file_name.as_str()),
                     ));
                 }
             }
@@ -73,7 +73,7 @@ impl<'a> Explorer<'a> {
         // For a file tree this is fine because we shouldn't list the same object twice.
         TreeItem::new(
             path_meta.abs_path.clone(),
-            path_meta.file_name.clone(),
+            format!("{} {}", path_meta.icon.icon, path_meta.file_name.as_str()),
             children,
         )
         .context(format!(

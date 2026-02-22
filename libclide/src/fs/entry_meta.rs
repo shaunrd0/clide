@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
 use anyhow::{Context, Result};
+use devicons::FileIcon;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -10,6 +11,7 @@ pub struct EntryMeta {
     pub abs_path: String,
     pub file_name: String,
     pub is_dir: bool,
+    pub icon: FileIcon,
 }
 
 impl EntryMeta {
@@ -41,10 +43,12 @@ impl EntryMeta {
             .context(format!("Failed to get file name for path: {abs_path:?}"))?
             .to_string_lossy()
             .to_string();
+        let icon = crate::fs::icon(&abs_path);
         Ok(EntryMeta {
             abs_path,
             file_name,
             is_dir,
+            icon,
         })
     }
 }

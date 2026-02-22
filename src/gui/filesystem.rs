@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
 use cxx_qt_lib::{QModelIndex, QString};
-use devicons::FileIcon;
 use dirs;
 use std::fs;
 use std::path::Path;
@@ -142,13 +141,6 @@ impl qobject::FileSystem {
     }
 
     fn icon(self: std::pin::Pin<&mut Self>, path: &QString) -> QString {
-        let str = path.to_string();
-        if Path::new(&str).is_dir() {
-            // Ensures directories are given a folder icon and not mistakenly resolved to a language.
-            // For example, a directory named `cpp` would otherwise return a C++ icon.
-            return QString::from(FileIcon::from("dir/").to_string());
-        }
-        let icon = FileIcon::from(str);
-        QString::from(icon.to_string())
+        QString::from(libclide::fs::icon(path.to_string().as_str()).to_string())
     }
 }
