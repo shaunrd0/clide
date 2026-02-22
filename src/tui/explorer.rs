@@ -4,7 +4,8 @@
 
 use crate::tui::component::{Action, Component, ComponentState, Focus, FocusState};
 use anyhow::{Context, Result, bail};
-use log::{trace};
+use libclide::fs::entry_meta::EntryMeta;
+use log::trace;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::layout::{Alignment, Position, Rect};
@@ -14,7 +15,6 @@ use ratatui::widgets::{Block, Borders, StatefulWidget, Widget};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tui_tree_widget::{Tree, TreeItem, TreeState};
-use libclide::fs::entry_meta::EntryMeta;
 
 #[derive(Debug)]
 pub struct Explorer<'a> {
@@ -30,8 +30,8 @@ impl<'a> Explorer<'a> {
     pub fn new(path: &PathBuf) -> Result<Self> {
         trace!(target:Self::ID, "Building {}", Self::ID);
         let explorer = Explorer {
-            root_path: EntryMeta::new(&path)?,
-            tree_items: Self::build_tree_from_path(path.to_owned())?,
+            root_path: EntryMeta::new(path)?,
+            tree_items: Self::build_tree_from_path(path)?,
             tree_state: TreeState::default(),
             component_state: ComponentState::default().with_help_text(concat!(
                 "(↑/k)/(↓/j): Select item | ←/h: Close folder | →/l: Open folder |",
@@ -96,7 +96,7 @@ impl<'a> Explorer<'a> {
 
 impl<'a> Widget for &mut Explorer<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        if let Ok(tree) = Tree::new(&self.tree_items.children()) {
+        if let Ok(tree) = Tree::new(self.tree_items.children()) {
             StatefulWidget::render(
                 tree.block(
                     Block::default()
@@ -130,23 +130,21 @@ impl<'a> Component for Explorer<'a> {
                 _ => {}
             }
         }
-        if let Some(mouse_event) = event.as_mouse_event() {
-            match self.handle_mouse_events(mouse_event)? {
-                Action::Handled => return Ok(Action::Handled),
-                _ => {}
-            }
+        if let Some(mouse_event) = event.as_mouse_event()
+            && let Action::Handled = self.handle_mouse_events(mouse_event)?
+        {
+            return Ok(Action::Handled);
         }
         Ok(Action::Pass)
     }
 
     fn handle_key_events(&mut self, key: KeyEvent) -> Result<Action> {
-        if key.code == KeyCode::Enter {
-            if let Ok(selected) = self.selected() {
-                if Path::new(&selected).is_file() {
-                    return Ok(Action::OpenTab);
-                }
-            }
-            // Otherwise fall through and handle Enter in the next match case.
+        if key.code == KeyCode::Enter
+            && let Ok(selected) = self.selected()
+            && Path::new(&selected).is_file()
+        {
+            // Open a tab if the selected item is a file.
+            return Ok(Action::OpenTab);
         }
 
         let changed = match key.code {

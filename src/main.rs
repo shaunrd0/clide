@@ -82,7 +82,7 @@ fn main() -> Result<()> {
         RunMode::Gui => {
             trace!(target:"main()", "Starting GUI in a new process");
             Command::new(std::env::current_exe()?)
-                .args(&["--gui", app_context.path.to_str().unwrap()])
+                .args(["--gui", app_context.path.to_str().unwrap()])
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .stdin(Stdio::null())

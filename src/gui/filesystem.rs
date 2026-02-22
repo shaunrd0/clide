@@ -76,7 +76,7 @@ impl qobject::FileSystem {
             return QString::default();
         }
         let meta = fs::metadata(path.to_string())
-            .expect(format!("Failed to get file metadata {path:?}").as_str());
+            .unwrap_or_else(|_| panic!("Failed to get file metadata {path:?}"));
         if !meta.is_file() {
             warn!(target:"FileSystem", "Attempted to open file {path:?} that is not a valid file");
             return QString::default();
@@ -114,7 +114,7 @@ impl qobject::FileSystem {
             output.push_str("</pre>\n");
             QString::from(output)
         } else {
-            return QString::default();
+            QString::default()
         }
     }
 
@@ -126,7 +126,7 @@ impl qobject::FileSystem {
     fn set_directory(self: std::pin::Pin<&mut Self>, path: &QString) -> QModelIndex {
         if !path.is_empty()
             && fs::metadata(path.to_string())
-                .expect(format!("Failed to get metadata for path {path:?}").as_str())
+                .unwrap_or_else(|_| panic!("Failed to get metadata for path {path:?}"))
                 .is_dir()
         {
             self.set_root_path(path)
@@ -147,7 +147,7 @@ impl qobject::FileSystem {
         if Path::new(&str).is_dir() {
             // Ensures directories are given a folder icon and not mistakenly resolved to a language.
             // For example, a directory named `cpp` would otherwise return a C++ icon.
-            return QString::from(FileIcon::from("dir/").to_string())
+            return QString::from(FileIcon::from("dir/").to_string());
         }
         let icon = FileIcon::from(str);
         QString::from(icon.to_string())
