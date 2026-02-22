@@ -1,4 +1,4 @@
-name: Build
+name: Check
 
 on:
   push:
@@ -61,7 +61,25 @@ jobs:
 
       - name: Lint libclide
         run: |
-          cargo clippy --manifest-path libclide/Cargo.toml -- -D warnings
+          cargo clippy -p libclide -- -D warnings
       - name: Lint clide
         run: |
           cargo clippy -- -D warnings
+
+  Format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Qt
+        uses: ./.github/actions/setup-qt
+        with:
+          qt-version: ${{ env.QT_VERSION }}
+
+      - name: Format libclide
+        run: |
+          cargo fmt -p libclide --verbose -- --check
+      - name: Format clide
+        run: |
+          cargo fmt --verbose -- --check

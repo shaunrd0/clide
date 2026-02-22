@@ -23,3 +23,9 @@ libclide = { path = "./libclide" }
 [build-dependencies]
 # The link_qt_object_files feature is required for statically linking Qt 6.
 cxx-qt-build = { version = "0.8.0", features = ["link_qt_object_files"] }
+
+[workspace]
+members = [
+    ".",
+    "libclide",
+]
