@@ -131,7 +131,7 @@ impl MenuBar {
         opened: MenuBarItem,
     ) {
         let popup_area = Self::rect_under_option(title_bar_anchor, area, 27, 10);
-        Clear::default().render(popup_area, buf);
+        Clear.render(popup_area, buf);
         let options = opened.options().iter().map(|i| ListItem::new(i.id()));
         StatefulWidget::render(
             List::new(options)
@@ -150,15 +150,14 @@ impl MenuBar {
     }
 
     fn rect_under_option(anchor: Rect, area: Rect, width: u16, height: u16) -> Rect {
-        let rect = Rect {
+        Rect {
             x: anchor.x,
             y: anchor.y + anchor.height,
             width: width.min(area.width),
             height,
-        };
+        }
         // TODO: X offset for item option? It's fine as-is, but it might look nicer.
         // trace!(target:Self::ID, "Building Rect under MenuBar popup {}", rect);
-        rect
     }
 }
 

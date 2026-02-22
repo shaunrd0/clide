@@ -68,8 +68,8 @@ impl Widget for About {
             .map(|l| Line::from(Span::raw(*l)))
             .collect();
 
-        Clear::default().render(kilroy_rect, buf);
-        Clear::default().render(chunks[1], buf);
+        Clear.render(kilroy_rect, buf);
+        Clear.render(chunks[1], buf);
         Paragraph::new(about_lines)
             .block(
                 Block::default()

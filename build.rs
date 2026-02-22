@@ -1,7 +1,7 @@
 use cxx_qt_build::{CxxQtBuilder, QmlModule};
 
 fn main() {
-    CxxQtBuilder::new_qml_module(QmlModule::new("clide.module").qml_files(&[
+    CxxQtBuilder::new_qml_module(QmlModule::new("clide.module").qml_files([
         "qml/ClideApplicationView.qml",
         "qml/ClideEditorView.qml",
         "qml/ClideExplorerView.qml",
