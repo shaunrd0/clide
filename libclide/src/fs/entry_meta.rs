@@ -52,3 +52,13 @@ impl EntryMeta {
         })
     }
 }
+
+pub fn icon<P: AsRef<str>>(p: P) -> FileIcon {
+    let path = p.as_ref();
+    if Path::new(&path).is_dir() {
+        // Ensures directories are given a folder icon and not mistakenly resolved to a language.
+        // For example, a directory named `cpp` would otherwise return a C++ icon.
+        return FileIcon::from("dir/");
+    }
+    FileIcon::from(path)
+}

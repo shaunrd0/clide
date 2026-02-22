@@ -9,15 +9,11 @@ use syn::{ItemStruct, parse_macro_input};
 #[proc_macro_attribute]
 pub fn log_id(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemStruct);
-
     let struct_name = &input.ident;
     let generics = &input.generics;
 
-    // This is the important part
     let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
-
     let struct_name_str = struct_name.to_string();
-
     let expanded = quote! {
         #input
 
