@@ -116,7 +116,7 @@ impl Component for Editor {
         if let Some(key_event) = event.as_key_event() {
             // Handle events here that should not be passed on to the vim emulation handler.
             if let Action::Handled = self.handle_key_events(key_event)? {
-                return Ok(Action::Handled)
+                return Ok(Action::Handled);
             }
         }
         self.event_handler.on_event(event, &mut self.state);

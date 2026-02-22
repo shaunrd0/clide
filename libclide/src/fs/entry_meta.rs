@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
-use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct EntryMeta {
