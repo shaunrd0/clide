@@ -26,6 +26,9 @@ jobs:
       - name: Build libclide
         run: |
           cargo b -p libclide --release
+      - name: Build libclide-macros
+        run: |
+          cargo b -p libclide-macros --release
       - name: Build clide
         run: |
           cargo b --release
@@ -44,6 +47,9 @@ jobs:
       - name: Test libclide
         run: |
           cargo test -p libclide
+      - name: Test libclide-macros
+        run: |
+          cargo test -p libclide-macros
       - name: Test clide
         run: |
           cargo test
@@ -62,6 +68,9 @@ jobs:
       - name: Lint libclide
         run: |
           cargo clippy -p libclide -- -D warnings
+      - name: Lint libclide-macros
+        run: |
+          cargo clippy -p libclide-macros -- -D warnings
       - name: Lint clide
         run: |
           cargo clippy -- -D warnings
@@ -80,6 +89,9 @@ jobs:
       - name: Format libclide
         run: |
           cargo fmt -p libclide --verbose -- --check
+      - name: Format libclide-macros
+        run: |
+          cargo fmt -p libclide-macros -- --check
       - name: Format clide
         run: |
           cargo fmt --verbose -- --check

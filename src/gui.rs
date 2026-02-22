@@ -5,13 +5,12 @@
 use crate::AppContext;
 use anyhow::Result;
 use cxx_qt_lib::{QMapPair, QMapPair_QString_QVariant, QString, QVariant};
-use log::trace;
 
 pub mod colors;
 pub mod filesystem;
 
 pub fn run(app_context: AppContext) -> Result<()> {
-    trace!(target:"gui::run()", "Starting the GUI editor at {:?}", app_context.path);
+    libclide::trace!(target:"gui::run()", "Starting the GUI editor at {:?}", app_context.path);
 
     use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QUrl};
 

@@ -9,7 +9,7 @@ use crate::tui::explorer::Explorer;
 use crate::tui::logger::Logger;
 use crate::tui::menu_bar::MenuBar;
 use anyhow::{Context, Result};
-use log::{error, info, trace};
+use libclide_macros::log_id;
 use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event;
@@ -30,6 +30,7 @@ pub enum AppComponent {
     MenuBar,
 }
 
+#[log_id]
 pub struct App<'a> {
     editor_tab: EditorTab,
     explorer: Explorer<'a>,
@@ -40,10 +41,8 @@ pub struct App<'a> {
 }
 
 impl<'a> App<'a> {
-    pub const ID: &'static str = "App";
-
     pub fn new(root_path: PathBuf) -> Result<Self> {
-        trace!(target:Self::ID, "Building {}", Self::ID);
+        libclide::trace!(target:Self::ID, "Building {}", Self::ID);
         let app = Self {
             editor_tab: EditorTab::new(),
             explorer: Explorer::new(&root_path)?,
@@ -57,13 +56,13 @@ impl<'a> App<'a> {
 
     /// Logic that should be executed once on application startup.
     pub fn start(&mut self) -> Result<()> {
-        trace!(target:Self::ID, "Starting App");
+        libclide::trace!(target:Self::ID, "Starting App");
         Ok(())
     }
 
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.start()?;
-        trace!(target:Self::ID, "Entering App run loop");
+        libclide::trace!(target:Self::ID, "Entering App run loop");
         loop {
             terminal.draw(|f| {
                 f.render_widget(&mut self, f.area());
@@ -89,7 +88,7 @@ impl<'a> App<'a> {
                 Some(editor) => editor.component_state.help_text.clone(),
                 None => {
                     if !self.editor_tab.is_empty() {
-                        error!(target:Self::ID, "Failed to get Editor while drawing bottom status bar");
+                        libclide::error!(target:Self::ID, "Failed to get Editor while drawing bottom status bar");
                     }
                     "Failed to get current Editor while getting widget help text".to_string()
                 }
@@ -113,26 +112,26 @@ impl<'a> App<'a> {
     }
 
     fn clear_focus(&mut self) {
-        info!(target:Self::ID, "Clearing all widget focus");
+        libclide::info!(target:Self::ID, "Clearing all widget focus");
         self.explorer.component_state.set_focus(Focus::Inactive);
         self.explorer.component_state.set_focus(Focus::Inactive);
         self.logger.component_state.set_focus(Focus::Inactive);
         self.menu_bar.component_state.set_focus(Focus::Inactive);
         match self.editor_tab.current_editor_mut() {
             None => {
-                error!(target:Self::ID, "Failed to get current Editor while clearing focus")
+                libclide::error!(target:Self::ID, "Failed to get current Editor while clearing focus")
             }
             Some(editor) => editor.component_state.set_focus(Focus::Inactive),
         }
     }
 
     fn change_focus(&mut self, focus: AppComponent) {
-        info!(target:Self::ID, "Changing widget focus to {:?}", focus);
+        libclide::info!(target:Self::ID, "Changing widget focus to {:?}", focus);
         self.clear_focus();
         match focus {
             AppComponent::Editor => match self.editor_tab.current_editor_mut() {
                 None => {
-                    error!(target:Self::ID, "Failed to get current Editor while changing focus")
+                    libclide::error!(target:Self::ID, "Failed to get current Editor while changing focus")
                 }
                 Some(editor) => editor.component_state.set_focus(Focus::Active),
             },
@@ -275,13 +274,13 @@ impl<'a> Component for App<'a> {
             Action::Quit | Action::Handled => Ok(action),
             Action::Save => match self.editor_tab.current_editor_mut() {
                 None => {
-                    error!(target:Self::ID, "Failed to get current editor while handling App Action::Save");
+                    libclide::error!(target:Self::ID, "Failed to get current editor while handling App Action::Save");
                     Ok(Action::Noop)
                 }
                 Some(editor) => match editor.save() {
                     Ok(_) => Ok(Action::Handled),
                     Err(e) => {
-                        error!(target:Self::ID, "Failed to save editor contents: {e}");
+                        libclide::error!(target:Self::ID, "Failed to save editor contents: {e}");
                         Ok(Action::Noop)
                     }
                 },
@@ -300,14 +299,14 @@ impl<'a> Component for App<'a> {
                 Err(_) => Ok(Action::Noop),
             },
             Action::ReloadFile => {
-                trace!(target:Self::ID, "Reloading file for current editor");
+                libclide::trace!(target:Self::ID, "Reloading file for current editor");
                 if let Some(editor) = self.editor_tab.current_editor_mut() {
                     editor
                         .reload_contents()
                         .map(|_| Action::Handled)
                         .context("Failed to handle Action::ReloadFile")
                 } else {
-                    error!(target:Self::ID, "Failed to get current editor while handling App Action::ReloadFile");
+                    libclide::error!(target:Self::ID, "Failed to get current editor while handling App Action::ReloadFile");
                     Ok(Action::Noop)
                 }
             }

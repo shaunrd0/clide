@@ -5,7 +5,7 @@
 use crate::tui::component::{Action, Component, ComponentState, Focus, FocusState};
 use anyhow::{Context, Result, bail};
 use libclide::fs::entry_meta::EntryMeta;
-use log::trace;
+use libclide_macros::log_id;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::layout::{Alignment, Position, Rect};
@@ -17,6 +17,7 @@ use std::path::{Path, PathBuf};
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 
 #[derive(Debug)]
+#[log_id]
 pub struct Explorer<'a> {
     root_path: EntryMeta,
     tree_items: TreeItem<'a, String>,
@@ -25,10 +26,8 @@ pub struct Explorer<'a> {
 }
 
 impl<'a> Explorer<'a> {
-    pub const ID: &'static str = "Explorer";
-
     pub fn new(path: &PathBuf) -> Result<Self> {
-        trace!(target:Self::ID, "Building {}", Self::ID);
+        libclide::trace!("Building {}", Self::ID);
         let explorer = Explorer {
             root_path: EntryMeta::new(path)?,
             tree_items: Self::build_tree_from_path(path)?,

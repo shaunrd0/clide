@@ -41,7 +41,7 @@ impl Colors {
         let hex_full = match hex.len() {
             3 => hex
                 .chars()
-                .map(|c| std::iter::repeat(c).take(2).collect::<String>())
+                .map(|c| std::iter::repeat_n(c, 2).collect::<String>())
                 .collect::<String>(),
             6 => hex.to_string(),
             _ => panic!("Invalid hex color length: {hex:?}"),

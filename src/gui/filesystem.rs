@@ -5,7 +5,6 @@
 use cxx_qt_lib::{QModelIndex, QString};
 use devicons::FileIcon;
 use dirs;
-use log::warn;
 use std::fs;
 use std::path::Path;
 use syntect::easy::HighlightLines;
@@ -78,7 +77,7 @@ impl qobject::FileSystem {
         let meta = fs::metadata(path.to_string())
             .unwrap_or_else(|_| panic!("Failed to get file metadata {path:?}"));
         if !meta.is_file() {
-            warn!(target:"FileSystem", "Attempted to open file {path:?} that is not a valid file");
+            libclide::warn!(target:"FileSystem", "Attempted to open file {path:?} that is not a valid file");
             return QString::default();
         }
         let path_str = path.to_string();

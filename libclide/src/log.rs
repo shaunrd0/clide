@@ -2,6 +2,4 @@
 //
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
-pub mod fs;
-pub mod log;
-pub mod theme;
+pub mod macros;

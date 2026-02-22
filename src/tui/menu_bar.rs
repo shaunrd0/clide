@@ -7,7 +7,7 @@ use crate::tui::menu_bar::MenuBarItemOption::{
     About, CloseTab, Exit, Reload, Save, ShowHideExplorer, ShowHideLogger,
 };
 use anyhow::Context;
-use log::trace;
+use libclide_macros::log_id;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use ratatui::layout::Rect;
@@ -80,6 +80,7 @@ impl MenuBarItem {
     }
 }
 
+#[log_id]
 pub struct MenuBar {
     selected: MenuBarItem,
     opened: Option<MenuBarItem>,
@@ -88,11 +89,9 @@ pub struct MenuBar {
 }
 
 impl MenuBar {
-    pub const ID: &str = "MenuBar";
-
     const DEFAULT_HELP: &str = "(←/h)/(→/l): Select option | Enter: Choose selection";
     pub fn new() -> Self {
-        trace!(target:Self::ID, "Building {}", Self::ID);
+        libclide::trace!("Building {}", Self::ID);
         Self {
             selected: MenuBarItem::File,
             opened: None,
@@ -157,7 +156,7 @@ impl MenuBar {
             height,
         }
         // TODO: X offset for item option? It's fine as-is, but it might look nicer.
-        // trace!(target:Self::ID, "Building Rect under MenuBar popup {}", rect);
+        // trace!("Building Rect under MenuBar popup {}", rect);
     }
 }
 

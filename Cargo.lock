@@ -299,6 +299,7 @@ dependencies = [
  "dirs",
  "edtui",
  "libclide",
+ "libclide-macros",
  "log",
  "ratatui",
  "strum",
@@ -1169,7 +1170,17 @@ name = "libclide"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "log",
  "strum",
+]
+
+[[package]]
+name = "libclide-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]
