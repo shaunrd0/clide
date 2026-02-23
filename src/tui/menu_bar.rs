@@ -7,7 +7,7 @@ use crate::tui::menu_bar::MenuBarItemOption::{
     About, CloseTab, Exit, Reload, Save, ShowHideExplorer, ShowHideLogger,
 };
 use anyhow::Context;
-use libclide_macros::log_id;
+use libclide_macros::Loggable;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use ratatui::layout::Rect;
@@ -80,7 +80,7 @@ impl MenuBarItem {
     }
 }
 
-#[log_id]
+#[derive(Debug, Loggable)]
 pub struct MenuBar {
     selected: MenuBarItem,
     opened: Option<MenuBarItem>,
@@ -91,7 +91,7 @@ pub struct MenuBar {
 impl MenuBar {
     const DEFAULT_HELP: &str = "(←/h)/(→/l): Select option | Enter: Choose selection";
     pub fn new() -> Self {
-        libclide::trace!("Building {}", Self::ID);
+        libclide::trace!("Building");
         Self {
             selected: MenuBarItem::File,
             opened: None,

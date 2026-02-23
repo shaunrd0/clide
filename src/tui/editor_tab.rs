@@ -5,7 +5,8 @@
 use crate::tui::component::{Action, Component, Focus, FocusState};
 use crate::tui::editor::Editor;
 use anyhow::{Context, Result, anyhow};
-use libclide_macros::log_id;
+use libclide::log::Loggable;
+use libclide_macros::Loggable;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::Rect;
@@ -16,7 +17,7 @@ use std::collections::HashMap;
 // Render the tabs with keys as titles
 // Tab keys can be file names.
 // Render the editor using the key as a reference for lookup
-#[log_id]
+#[derive(Loggable)]
 pub struct EditorTab {
     pub(crate) editors: HashMap<String, Editor>,
     tab_order: Vec<String>,
@@ -25,7 +26,7 @@ pub struct EditorTab {
 
 impl EditorTab {
     pub fn new() -> Self {
-        libclide::trace!(target:Self::ID, "Building {}", Self::ID);
+        libclide::trace!("Building {}", <Self as Loggable>::ID);
         Self {
             editors: HashMap::new(),
             tab_order: Vec::new(),
@@ -35,7 +36,11 @@ impl EditorTab {
 
     pub fn next_editor(&mut self) {
         let next = (self.current_editor + 1) % self.tab_order.len();
-        libclide::trace!(target:Self::ID, "Moving from {} to next editor tab at {}", self.current_editor, next);
+        libclide::trace!(
+            "Moving from {} to next editor tab at {}",
+            self.current_editor,
+            next
+        );
         self.set_tab_focus(Focus::Active, next);
         self.current_editor = next;
     }
@@ -45,7 +50,11 @@ impl EditorTab {
             .current_editor
             .checked_sub(1)
             .unwrap_or(self.tab_order.len() - 1);
-        libclide::trace!(target:Self::ID, "Moving from {} to previous editor tab at {}", self.current_editor, prev);
+        libclide::trace!(
+            "Moving from {} to previous editor tab at {}",
+            self.current_editor,
+            prev
+        );
         self.set_tab_focus(Focus::Active, prev);
         self.current_editor = prev;
     }
@@ -54,7 +63,7 @@ impl EditorTab {
         match self.tab_order.get(index) {
             None => {
                 if !self.tab_order.is_empty() {
-                    libclide::error!(target:Self::ID, "Failed to get editor tab key with invalid index {index}");
+                    libclide::error!("Failed to get editor tab key with invalid index {index}");
                 }
                 None
             }
@@ -72,16 +81,19 @@ impl EditorTab {
     }
 
     pub fn set_current_tab_focus(&mut self, focus: Focus) {
-        libclide::trace!(target:Self::ID, "Setting current tab {} focus to {:?}", self.current_editor, focus);
+        libclide::trace!(
+            "Setting current tab {} focus to {:?}",
+            self.current_editor,
+            focus
+        );
         self.set_tab_focus(focus, self.current_editor)
     }
 
     pub fn set_tab_focus(&mut self, focus: Focus, index: usize) {
-        libclide::trace!(target:Self::ID, "Setting tab {} focus to {:?}", index, focus);
+        libclide::trace!("Setting tab {} focus to {:?}", index, focus);
         if focus == Focus::Active && index != self.current_editor {
             // If we are setting another tab to active, disable the current one.
             libclide::trace!(
-                target:Self::ID,
                 "New tab {} focus set to Active; Setting current tab {} to Inactive",
                 index,
                 self.current_editor
@@ -90,12 +102,11 @@ impl EditorTab {
         }
         match self.get_editor_key(index) {
             None => {
-                libclide::error!(target:Self::ID, "Failed setting tab focus for invalid key {index}");
+                libclide::error!("Failed setting tab focus for invalid key {index}");
             }
             Some(key) => match self.editors.get_mut(&key) {
                 None => {
                     libclide::error!(
-                        target:Self::ID,
                         "Failed to update tab focus at index {} with invalid key: {}",
                         self.current_editor,
                         self.tab_order[self.current_editor]
@@ -107,12 +118,12 @@ impl EditorTab {
     }
 
     pub fn open_tab(&mut self, path: &std::path::Path) -> Result<()> {
-        libclide::trace!(target:Self::ID, "Opening new EditorTab with path {:?}", path);
+        libclide::trace!("Opening new EditorTab with path {:?}", path);
         if self
             .editors
             .contains_key(&path.to_string_lossy().to_string())
         {
-            libclide::warn!(target:Self::ID, "EditorTab already opened with this file");
+            libclide::warn!("EditorTab already opened with this file");
             return Ok(());
         }
 
@@ -137,12 +148,12 @@ impl EditorTab {
             .to_owned();
         match self.editors.remove(&key) {
             None => {
-                libclide::error!(target:Self::ID, "Failed to remove editor tab {key} with invalid index {index}")
+                libclide::error!("Failed to remove editor tab {key} with invalid index {index}")
             }
             Some(_) => {
                 self.prev_editor();
                 self.tab_order.remove(index);
-                libclide::info!(target:Self::ID, "Closed editor tab {key} at index {index}")
+                libclide::info!("Closed editor tab {key} at index {index}")
             }
         }
         Ok(())

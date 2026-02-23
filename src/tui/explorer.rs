@@ -5,7 +5,8 @@
 use crate::tui::component::{Action, Component, ComponentState, Focus, FocusState};
 use anyhow::{Context, Result, bail};
 use libclide::fs::entry_meta::EntryMeta;
-use libclide_macros::log_id;
+use libclide::log::Loggable;
+use libclide_macros::Loggable;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::layout::{Alignment, Position, Rect};
@@ -16,8 +17,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 
-#[derive(Debug)]
-#[log_id]
+#[derive(Debug, Loggable)]
 pub struct Explorer<'a> {
     root_path: EntryMeta,
     tree_items: TreeItem<'a, String>,
@@ -27,7 +27,7 @@ pub struct Explorer<'a> {
 
 impl<'a> Explorer<'a> {
     pub fn new(path: &PathBuf) -> Result<Self> {
-        libclide::trace!("Building {}", Self::ID);
+        libclide::trace!("Building {}", <Self as Loggable>::ID);
         let explorer = Explorer {
             root_path: EntryMeta::new(path)?,
             tree_items: Self::build_tree_from_path(path)?,
@@ -69,7 +69,7 @@ impl<'a> Explorer<'a> {
             }
         }
 
-        // Note: The first argument is a unique identifier, where no 2 TreeItems may share the same.
+        // Note: The first argument is a unique identifier, where no. 2 TreeItems may share the same.
         // For a file tree this is fine because we shouldn't list the same object twice.
         TreeItem::new(
             path_meta.abs_path.clone(),

@@ -13,7 +13,7 @@ mod menu_bar;
 
 use crate::AppContext;
 use anyhow::{Context, Result};
-use libclide_macros::log_id;
+use libclide_macros::Loggable;
 use log::LevelFilter;
 use ratatui::Terminal;
 use ratatui::backend::CrosstermBackend;
@@ -29,20 +29,19 @@ use tui_logger::{
     TuiLoggerFile, TuiLoggerLevelOutput, init_logger, set_default_level, set_log_file,
 };
 
-#[log_id]
+#[derive(Loggable)]
 struct Tui {
     terminal: Terminal<CrosstermBackend<Stdout>>,
     root_path: std::path::PathBuf,
 }
 
 pub fn run(app_context: AppContext) -> Result<()> {
-    libclide::trace!(target:Tui::ID, "Starting TUI");
+    libclide::trace!(target: "clide::tui::run", "Starting TUI");
     Tui::new(app_context)?.start()
 }
 
 impl Tui {
     fn new(app_context: AppContext) -> Result<Self> {
-        libclide::trace!("Building {}", Self::ID);
         init_logger(LevelFilter::Trace)?;
         set_default_level(LevelFilter::Trace);
         libclide::debug!("Logging initialized");

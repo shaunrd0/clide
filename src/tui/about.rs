@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
-use libclide_macros::log_id;
+use libclide_macros::Loggable;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Padding, Paragraph, Widget, Wrap};
 
-#[log_id]
+#[derive(Loggable)]
 pub struct About {}
 
 impl About {

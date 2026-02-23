@@ -8,7 +8,7 @@ use crate::tui::component::Focus::Inactive;
 use Focus::Active;
 use anyhow::Result;
 use libclide::theme::colors::Colors;
-use libclide_macros::log_id;
+use libclide_macros::Loggable;
 use ratatui::crossterm::event::{Event, KeyEvent, MouseEvent};
 use ratatui::style::Color;
 
@@ -62,8 +62,7 @@ pub trait Component {
     }
 }
 
-#[derive(Debug, Clone, Default)]
-#[log_id]
+#[derive(Debug, Clone, Default, Loggable)]
 pub struct ComponentState {
     pub(crate) focus: Focus,
     pub(crate) vis: Visibility,

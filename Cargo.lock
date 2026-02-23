@@ -1171,6 +1171,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "devicons",
+ "libclide-macros",
  "log",
  "strum",
 ]

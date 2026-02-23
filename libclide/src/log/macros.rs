@@ -9,111 +9,67 @@
 //! explicitly set. This is to avoid implicit pooling of log messages under the same default target,
 //! which can make it difficult to filter log messages by their source.
 //!
-//! The target argument can be overridden using one of the following macros.
+//! The Loggable trait can be implemented to automatically associate log messages with a struct.
 //! ```
-//! libclide::log!(target: "CustomTarget", "This log message will have the target 'CustomTarget'");
-//! ```
+//! use libclide_macros::Loggable;
 //!
-//! The target argument will default to Self::ID if not provided.
-//! This is an error if Self::ID is not defined, forcing you to use the explicit form.
-//! ```
-//! libclide::log!("This log message will use target Self::ID, the name of the struct it was invoked in");
-//! ```
-//!
-//! Self::ID can be defined using the `#[log_id]` attribute macro, which will automatically generate
-//! a constant ID field with the name of the struct as its value.
-//! ```
-//! #[log_id]
+//! #[derive(Loggable)]
 //! struct MyStruct;
 //! impl MyStruct {
 //!      fn my_method(&self) {
-//!          libclide::log!("This log message will use target Self::ID, which is 'MyStruct'");
+//!          libclide::info!("This log message will use target <Self as Loggable>::ID, which is 'MyStruct'");
 //!      }
 //!  }
+//! ```
+//!
+//! If the struct does not derive or implement Loggable, the target variant of the log macros must
+//! be used instead.
+//! ```
+//! libclide::info!(target: "CustomTarget", "This log message will have the target 'CustomTarget'");
 //! ```
 //!
 
 #[macro_export]
 macro_rules! info {
-    (logger: $logger:expr, target: $target:expr, $($arg:tt)+) => ({
-        log::info!(logger: $logger, target: $target, $($arg)+)
-    });
-
     (target: $target:expr, $($arg:tt)+) => ({
         log::info!(target: $target, $($arg)+)
     });
 
-    (logger: $logger:expr, $($arg:tt)+) => ({
-        log::info!(logger: $logger, target: Self::ID, $($arg)+)
-    });
-
-    ($($arg:tt)+) => (log::info!(target: Self::ID, $($arg)+))
+    ($($arg:tt)+) => (log::info!(target: <Self as libclide::log::Loggable>::ID, $($arg)+))
 }
 
 #[macro_export]
 macro_rules! debug {
-    (logger: $logger:expr, target: $target:expr, $($arg:tt)+) => ({
-        log::debug!(logger: $logger, target: $target, $($arg)+)
-    });
-
     (target: $target:expr, $($arg:tt)+) => ({
         log::debug!(target: $target, $($arg)+)
     });
 
-    (logger: $logger:expr, $($arg:tt)+) => ({
-        log::debug!(logger: $logger, target: Self::ID, $($arg)+)
-    });
-
-    ($($arg:tt)+) => (log::debug!(target: Self::ID, $($arg)+))
+    ($($arg:tt)+) => (log::debug!(target: <Self as libclide::log::Loggable>::ID, $($arg)+))
 }
 
 #[macro_export]
 macro_rules! warn {
-    (logger: $logger:expr, target: $target:expr, $($arg:tt)+) => ({
-        log::warn!(logger: $logger, target: $target, $($arg)+)
-    });
-
     (target: $target:expr, $($arg:tt)+) => ({
         log::warn!(target: $target, $($arg)+)
     });
 
-    (logger: $logger:expr, $($arg:tt)+) => ({
-        log::warn!(logger: $logger, target: Self::ID, $($arg)+)
-    });
-
-    ($($arg:tt)+) => (log::warn!(target: Self::ID, $($arg)+))
+    ($($arg:tt)+) => (log::warn!(target: <Self as libclide::log::Loggable>::ID, $($arg)+))
 }
 
 #[macro_export]
 macro_rules! error {
-    (logger: $logger:expr, target: $target:expr, $($arg:tt)+) => ({
-        log::error!(logger: $logger, target: $target, $($arg)+)
-    });
-
     (target: $target:expr, $($arg:tt)+) => ({
         log::error!(target: $target, $($arg)+)
     });
 
-    (logger: $logger:expr, $($arg:tt)+) => ({
-        log::error!(logger: $logger, target: Self::ID, $($arg)+)
-    });
-
-    ($($arg:tt)+) => (log::error!(target: Self::ID, $($arg)+))
+    ($($arg:tt)+) => (log::error!(target: <Self as libclide::log::Loggable>::ID, $($arg)+))
 }
 
 #[macro_export]
 macro_rules! trace {
-    (logger: $logger:expr, target: $target:expr, $($arg:tt)+) => ({
-        log::trace!(logger: $logger, target: $target, $($arg)+)
-    });
-
     (target: $target:expr, $($arg:tt)+) => ({
         log::trace!(target: $target, $($arg)+)
     });
 
-    (logger: $logger:expr, $($arg:tt)+) => ({
-        log::trace!(logger: $logger, target: Self::ID, $($arg)+)
-    });
-
-    ($($arg:tt)+) => (log::trace!(target: Self::ID, $($arg)+))
+    ($($arg:tt)+) => (log::trace!(target: <Self as libclide::log::Loggable>::ID, $($arg)+))
 }

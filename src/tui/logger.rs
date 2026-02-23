@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
 use crate::tui::component::{Action, Component, ComponentState, Focus, FocusState};
-use libclide_macros::log_id;
+use libclide::log::Loggable;
+use libclide_macros::Loggable;
 use log::LevelFilter;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent};
@@ -14,7 +15,7 @@ use tui_logger::{TuiLoggerLevelOutput, TuiLoggerSmartWidget, TuiWidgetEvent, Tui
 
 /// Any log written as info!(target:self.id(), "message") will work with this logger.
 /// The logger is bound to info!, debug!, error!, trace! macros within Tui::new().
-#[log_id]
+#[derive(Loggable)]
 pub struct Logger {
     state: TuiWidgetState,
     pub(crate) component_state: ComponentState,
@@ -22,7 +23,7 @@ pub struct Logger {
 
 impl Logger {
     pub fn new() -> Self {
-        libclide::trace!(target:Self::ID, "Building {}", Self::ID);
+        libclide::trace!("Building {}", <Self as Loggable>::ID);
         let state = TuiWidgetState::new();
         state.transition(TuiWidgetEvent::HideKey);
         Self {

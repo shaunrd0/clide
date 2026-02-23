@@ -6,8 +6,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{ItemStruct, parse_macro_input};
 
-#[proc_macro_attribute]
-pub fn log_id(_attr: TokenStream, item: TokenStream) -> TokenStream {
+#[proc_macro_derive(Loggable)]
+pub fn loggable(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemStruct);
     let struct_name = &input.ident;
     let generics = &input.generics;
@@ -15,11 +15,8 @@ pub fn log_id(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
     let struct_name_str = struct_name.to_string();
     let expanded = quote! {
-        #input
-
-        impl #impl_generics #struct_name #type_generics #where_clause {
-            #[allow(unused)]
-            pub const ID: &'static str = #struct_name_str;
+        impl #impl_generics libclide::log::Loggable for #struct_name #type_generics #where_clause {
+            const ID: &'static str = #struct_name_str;
         }
     };
 
