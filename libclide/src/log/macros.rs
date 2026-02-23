@@ -11,7 +11,7 @@
 //!
 //! The Loggable trait can be implemented to automatically associate log messages with a struct.
 //! ```
-//! use libclide_macros::Loggable;
+//! use libclide::log::Loggable;
 //!
 //! #[derive(Loggable)]
 //! struct MyStruct;
@@ -35,7 +35,7 @@ macro_rules! info {
         log::info!(target: $target, $($arg)+)
     });
 
-    ($($arg:tt)+) => (log::info!(target: <Self as libclide::log::Loggable>::ID, $($arg)+))
+    ($($arg:tt)+) => (log::info!(target: Self::ID, $($arg)+))
 }
 
 #[macro_export]
@@ -44,7 +44,7 @@ macro_rules! debug {
         log::debug!(target: $target, $($arg)+)
     });
 
-    ($($arg:tt)+) => (log::debug!(target: <Self as libclide::log::Loggable>::ID, $($arg)+))
+    ($($arg:tt)+) => (log::debug!(target: Self::ID, $($arg)+))
 }
 
 #[macro_export]
@@ -53,7 +53,7 @@ macro_rules! warn {
         log::warn!(target: $target, $($arg)+)
     });
 
-    ($($arg:tt)+) => (log::warn!(target: <Self as libclide::log::Loggable>::ID, $($arg)+))
+    ($($arg:tt)+) => (log::warn!(target: Self::ID, $($arg)+))
 }
 
 #[macro_export]
@@ -62,7 +62,7 @@ macro_rules! error {
         log::error!(target: $target, $($arg)+)
     });
 
-    ($($arg:tt)+) => (log::error!(target: <Self as libclide::log::Loggable>::ID, $($arg)+))
+    ($($arg:tt)+) => (log::error!(target: Self::ID, $($arg)+))
 }
 
 #[macro_export]
@@ -71,5 +71,5 @@ macro_rules! trace {
         log::trace!(target: $target, $($arg)+)
     });
 
-    ($($arg:tt)+) => (log::trace!(target: <Self as libclide::log::Loggable>::ID, $($arg)+))
+    ($($arg:tt)+) => (log::trace!(target: Self::ID, $($arg)+))
 }

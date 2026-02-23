@@ -7,7 +7,7 @@ use crate::tui::menu_bar::MenuBarItemOption::{
     About, CloseTab, Exit, Reload, Save, ShowHideExplorer, ShowHideLogger,
 };
 use anyhow::Context;
-use libclide_macros::Loggable;
+use libclide::log::Loggable;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use ratatui::layout::Rect;

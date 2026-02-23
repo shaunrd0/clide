@@ -4,7 +4,6 @@
 
 use crate::tui::component::{Action, Component, ComponentState, Focus, FocusState};
 use libclide::log::Loggable;
-use libclide_macros::Loggable;
 use log::LevelFilter;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent};

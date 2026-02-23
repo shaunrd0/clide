@@ -4,6 +4,7 @@
 
 pub mod macros;
 
+pub use libclide_macros::Loggable;
 pub trait Loggable {
     const ID: &'static str;
 }

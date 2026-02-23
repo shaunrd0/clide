@@ -6,7 +6,6 @@ use crate::tui::component::{Action, Component, Focus, FocusState};
 use crate::tui::editor::Editor;
 use anyhow::{Context, Result, anyhow};
 use libclide::log::Loggable;
-use libclide_macros::Loggable;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::Rect;

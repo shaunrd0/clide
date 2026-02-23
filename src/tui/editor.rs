@@ -8,7 +8,6 @@ use edtui::{
     EditorEventHandler, EditorState, EditorTheme, EditorView, LineNumbers, Lines, SyntaxHighlighter,
 };
 use libclide::log::Loggable;
-use libclide_macros::Loggable;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::{Alignment, Rect};

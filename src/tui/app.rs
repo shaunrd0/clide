@@ -10,7 +10,6 @@ use crate::tui::logger::Logger;
 use crate::tui::menu_bar::MenuBar;
 use anyhow::{Context, Result};
 use libclide::log::Loggable;
-use libclide_macros::Loggable;
 use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event;
@@ -43,7 +42,7 @@ pub struct App<'a> {
 
 impl<'a> App<'a> {
     pub fn new(root_path: PathBuf) -> Result<Self> {
-        libclide::trace!("Building {}", <Self as Loggable>::ID);
+        libclide::trace!("Building {}", Self::ID);
         let app = Self {
             editor_tab: EditorTab::new(),
             explorer: Explorer::new(&root_path)?,
