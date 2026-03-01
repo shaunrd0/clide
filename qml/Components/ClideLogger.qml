@@ -14,7 +14,6 @@ Rectangle {
 
     ListModel {
         id: model
-
     }
     ListView {
         id: listView
@@ -38,10 +37,10 @@ Rectangle {
 
         anchors.fill: parent
         model: model
+        verticalLayoutDirection: ListView.BottomToTop
 
         delegate: Text {
             color: listView.getLogColor(level)
-            font.family: "monospace"
             text: `[${level}] ${message}`
         }
 
