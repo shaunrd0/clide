@@ -1174,6 +1174,7 @@ dependencies = [
  "libclide-macros",
  "log",
  "strum",
+ "syntect",
 ]
 
 [[package]]

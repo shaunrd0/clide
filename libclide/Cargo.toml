@@ -9,3 +9,4 @@ strum = { workspace = true }
 log = { workspace = true }
 devicons = { workspace = true }
 libclide-macros = { path = "../libclide-macros" }
+syntect = "5.3.0"

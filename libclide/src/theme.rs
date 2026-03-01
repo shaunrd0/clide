@@ -3,3 +3,4 @@
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
 pub mod colors;
+pub mod highlighter;
