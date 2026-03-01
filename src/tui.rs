@@ -13,9 +13,9 @@ mod menu_bar;
 
 use crate::AppContext;
 use anyhow::{Context, Result};
+use libclide::log::Loggable;
 use log::LevelFilter;
 use ratatui::Terminal;
-use libclide::log::Loggable;
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{
     DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,

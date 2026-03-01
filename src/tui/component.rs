@@ -7,8 +7,8 @@
 use crate::tui::component::Focus::Inactive;
 use Focus::Active;
 use anyhow::Result;
-use libclide::theme::colors::Colors;
 use libclide::log::Loggable;
+use libclide::theme::colors::Colors;
 use ratatui::crossterm::event::{Event, KeyEvent, MouseEvent};
 use ratatui::style::Color;
 
