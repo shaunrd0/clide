@@ -21,6 +21,7 @@ use strum::{EnumIter, FromRepr, IntoEnumIterator};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, FromRepr, EnumIter)]
 enum MenuBarItem {
     File,
+    Edit,
     View,
     Help,
 }
@@ -68,12 +69,14 @@ impl MenuBarItem {
             MenuBarItem::File => "File",
             MenuBarItem::View => "View",
             MenuBarItem::Help => "Help",
+            MenuBarItem::Edit => "Edit",
         }
     }
 
     pub fn options(&self) -> &[MenuBarItemOption] {
         match self {
-            MenuBarItem::File => &[Save, CloseTab, Reload, Exit],
+            MenuBarItem::File => &[Save, Reload, Exit],
+            MenuBarItem::Edit => &[CloseTab],
             MenuBarItem::View => &[ShowHideExplorer, ShowHideLogger],
             MenuBarItem::Help => &[About],
         }
