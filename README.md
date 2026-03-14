@@ -1,7 +1,7 @@
 # CLIDE
-[![Github](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/shaunrd0/clide/actions/workflows/check.yaml)
-[![Gitlab](https://img.shields.io/badge/GitLab-330F63?style=for-the-badge&logo=gitlab&logoColor=white)](https://github.com/shaunrd0/clide/actions/workflows/check.yaml)
-[![Gitea](https://img.shields.io/badge/Gitea-609926?style=for-the-badge&logo=gitea&logoColor=white)](https://github.com/shaunrd0/clide/actions/workflows/check.yaml)
+[![Github](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/shaunrd0/clide)
+[![Gitlab](https://img.shields.io/badge/GitLab-330F63?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/shaunrd0/clide)
+[![Gitea](https://img.shields.io/badge/Gitea-609926?style=for-the-badge&logo=gitea&logoColor=white)](https://git.shaunreed.com/shaunrd0/clide)
 
 [![Check](https://github.com/shaunrd0/clide/actions/workflows/check.yaml/badge.svg)](https://github.com/shaunrd0/clide/actions/workflows/check.yaml)
 
