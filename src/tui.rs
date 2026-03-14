@@ -13,7 +13,8 @@ mod menu_bar;
 
 use crate::AppContext;
 use anyhow::{Context, Result};
-use log::{LevelFilter, debug, info, trace};
+use libclide::log::Loggable;
+use log::LevelFilter;
 use ratatui::Terminal;
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{
@@ -28,24 +29,22 @@ use tui_logger::{
     TuiLoggerFile, TuiLoggerLevelOutput, init_logger, set_default_level, set_log_file,
 };
 
+#[derive(Loggable)]
 struct Tui {
     terminal: Terminal<CrosstermBackend<Stdout>>,
     root_path: std::path::PathBuf,
 }
 
 pub fn run(app_context: AppContext) -> Result<()> {
-    trace!(target:Tui::ID, "Starting TUI");
+    libclide::trace!(target: "clide::tui::run", "Starting TUI");
     Tui::new(app_context)?.start()
 }
 
 impl Tui {
-    pub const ID: &str = "Tui";
-
     fn new(app_context: AppContext) -> Result<Self> {
-        trace!(target:Self::ID, "Building {}", Self::ID);
         init_logger(LevelFilter::Trace)?;
         set_default_level(LevelFilter::Trace);
-        debug!(target:Self::ID, "Logging initialized");
+        libclide::debug!("Logging initialized");
 
         let mut dir = env::temp_dir();
         dir.push("clide.log");
@@ -57,7 +56,7 @@ impl Tui {
         .output_file(false)
         .output_separator(':');
         set_log_file(file_options);
-        debug!(target:Self::ID, "Logging to file: {dir:?}");
+        libclide::debug!("Logging to file: {dir:?}");
 
         Ok(Self {
             terminal: Terminal::new(CrosstermBackend::new(stdout()))?,
@@ -66,7 +65,7 @@ impl Tui {
     }
 
     fn start(self) -> Result<()> {
-        info!(target:Self::ID, "Starting the TUI editor at {:?}", self.root_path);
+        libclide::info!("Starting the TUI editor at {:?}", self.root_path);
         ratatui::crossterm::execute!(
             stdout(),
             EnterAlternateScreen,
@@ -83,7 +82,7 @@ impl Tui {
     }
 
     fn stop() -> Result<()> {
-        info!(target:Self::ID, "Stopping the TUI editor");
+        libclide::info!("Stopping the TUI editor");
         disable_raw_mode()?;
         ratatui::crossterm::execute!(
             stdout(),

@@ -3,15 +3,13 @@
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
 use crate::tui::about::About;
-use crate::tui::app::AppComponent::{AppEditor, AppExplorer, AppLogger};
 use crate::tui::component::{Action, Component, Focus, FocusState, Visibility, VisibleState};
 use crate::tui::editor_tab::EditorTab;
 use crate::tui::explorer::Explorer;
 use crate::tui::logger::Logger;
 use crate::tui::menu_bar::MenuBar;
-use AppComponent::AppMenuBar;
 use anyhow::{Context, Result};
-use log::{error, info, trace};
+use libclide::log::Loggable;
 use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event;
@@ -26,12 +24,13 @@ use std::time::Duration;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AppComponent {
-    AppEditor,
-    AppExplorer,
-    AppLogger,
-    AppMenuBar,
+    Editor,
+    Explorer,
+    Logger,
+    MenuBar,
 }
 
+#[derive(Loggable)]
 pub struct App<'a> {
     editor_tab: EditorTab,
     explorer: Explorer<'a>,
@@ -42,16 +41,14 @@ pub struct App<'a> {
 }
 
 impl<'a> App<'a> {
-    pub const ID: &'static str = "App";
-
     pub fn new(root_path: PathBuf) -> Result<Self> {
-        trace!(target:Self::ID, "Building {}", Self::ID);
+        libclide::trace!("Building {}", Self::ID);
         let app = Self {
             editor_tab: EditorTab::new(),
             explorer: Explorer::new(&root_path)?,
             logger: Logger::new(),
             menu_bar: MenuBar::new(),
-            last_active: AppEditor,
+            last_active: AppComponent::Editor,
             about: false,
         };
         Ok(app)
@@ -59,13 +56,13 @@ impl<'a> App<'a> {
 
     /// Logic that should be executed once on application startup.
     pub fn start(&mut self) -> Result<()> {
-        trace!(target:Self::ID, "Starting App");
+        libclide::trace!("Starting App");
         Ok(())
     }
 
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.start()?;
-        trace!(target:Self::ID, "Entering App run loop");
+        libclide::trace!("Entering App run loop");
         loop {
             terminal.draw(|f| {
                 f.render_widget(&mut self, f.area());
@@ -87,18 +84,18 @@ impl<'a> App<'a> {
     fn draw_bottom_status(&self, area: Rect, buf: &mut Buffer) {
         // Determine help text from the most recently focused component.
         let help = match self.last_active {
-            AppEditor => match self.editor_tab.current_editor() {
+            AppComponent::Editor => match self.editor_tab.current_editor() {
                 Some(editor) => editor.component_state.help_text.clone(),
                 None => {
                     if !self.editor_tab.is_empty() {
-                        error!(target:Self::ID, "Failed to get Editor while drawing bottom status bar");
+                        libclide::error!("Failed to get Editor while drawing bottom status bar");
                     }
                     "Failed to get current Editor while getting widget help text".to_string()
                 }
             },
-            AppExplorer => self.explorer.component_state.help_text.clone(),
-            AppLogger => self.logger.component_state.help_text.clone(),
-            AppMenuBar => self.menu_bar.component_state.help_text.clone(),
+            AppComponent::Explorer => self.explorer.component_state.help_text.clone(),
+            AppComponent::Logger => self.logger.component_state.help_text.clone(),
+            AppComponent::MenuBar => self.menu_bar.component_state.help_text.clone(),
         };
         Paragraph::new(
             concat!(
@@ -115,32 +112,32 @@ impl<'a> App<'a> {
     }
 
     fn clear_focus(&mut self) {
-        info!(target:Self::ID, "Clearing all widget focus");
+        libclide::info!("Clearing all widget focus");
         self.explorer.component_state.set_focus(Focus::Inactive);
         self.explorer.component_state.set_focus(Focus::Inactive);
         self.logger.component_state.set_focus(Focus::Inactive);
         self.menu_bar.component_state.set_focus(Focus::Inactive);
         match self.editor_tab.current_editor_mut() {
             None => {
-                error!(target:Self::ID, "Failed to get current Editor while clearing focus")
+                libclide::error!("Failed to get current Editor while clearing focus")
             }
             Some(editor) => editor.component_state.set_focus(Focus::Inactive),
         }
     }
 
     fn change_focus(&mut self, focus: AppComponent) {
-        info!(target:Self::ID, "Changing widget focus to {:?}", focus);
+        libclide::info!("Changing widget focus to {:?}", focus);
         self.clear_focus();
         match focus {
-            AppEditor => match self.editor_tab.current_editor_mut() {
+            AppComponent::Editor => match self.editor_tab.current_editor_mut() {
                 None => {
-                    error!(target:Self::ID, "Failed to get current Editor while changing focus")
+                    libclide::error!("Failed to get current Editor while changing focus")
                 }
                 Some(editor) => editor.component_state.set_focus(Focus::Active),
             },
-            AppExplorer => self.explorer.component_state.set_focus(Focus::Active),
-            AppLogger => self.logger.component_state.set_focus(Focus::Active),
-            AppMenuBar => self.menu_bar.component_state.set_focus(Focus::Active),
+            AppComponent::Explorer => self.explorer.component_state.set_focus(Focus::Active),
+            AppComponent::Logger => self.logger.component_state.set_focus(Focus::Active),
+            AppComponent::MenuBar => self.menu_bar.component_state.set_focus(Focus::Active),
         }
         self.last_active = focus;
     }
@@ -255,21 +252,21 @@ impl<'a> Component for App<'a> {
         }
         // Handle events for all components.
         let action = match self.last_active {
-            AppEditor => self.editor_tab.handle_event(event.clone())?,
-            AppExplorer => self.explorer.handle_event(event.clone())?,
-            AppLogger => self.logger.handle_event(event.clone())?,
-            AppMenuBar => self.menu_bar.handle_event(event.clone())?,
+            AppComponent::Editor => self.editor_tab.handle_event(event.clone())?,
+            AppComponent::Explorer => self.explorer.handle_event(event.clone())?,
+            AppComponent::Logger => self.logger.handle_event(event.clone())?,
+            AppComponent::MenuBar => self.menu_bar.handle_event(event.clone())?,
         };
 
         // Components should always handle mouse events for click interaction.
-        if let Some(mouse) = event.as_mouse_event() {
-            if mouse.kind == MouseEventKind::Down(MouseButton::Left) {
-                if let Some(editor) = self.editor_tab.current_editor_mut() {
-                    editor.handle_mouse_events(mouse)?;
-                }
-                self.explorer.handle_mouse_events(mouse)?;
-                self.logger.handle_mouse_events(mouse)?;
+        if let Some(mouse) = event.as_mouse_event()
+            && mouse.kind == MouseEventKind::Down(MouseButton::Left)
+        {
+            if let Some(editor) = self.editor_tab.current_editor_mut() {
+                editor.handle_mouse_events(mouse)?;
             }
+            self.explorer.handle_mouse_events(mouse)?;
+            self.logger.handle_mouse_events(mouse)?;
         }
 
         // Handle actions returned from widgets that may need context on other widgets or app state.
@@ -277,13 +274,15 @@ impl<'a> Component for App<'a> {
             Action::Quit | Action::Handled => Ok(action),
             Action::Save => match self.editor_tab.current_editor_mut() {
                 None => {
-                    error!(target:Self::ID, "Failed to get current editor while handling App Action::Save");
+                    libclide::error!(
+                        "Failed to get current editor while handling App Action::Save"
+                    );
                     Ok(Action::Noop)
                 }
                 Some(editor) => match editor.save() {
                     Ok(_) => Ok(Action::Handled),
                     Err(e) => {
-                        error!(target:Self::ID, "Failed to save editor contents: {e}");
+                        libclide::error!("Failed to save editor contents: {e}");
                         Ok(Action::Noop)
                     }
                 },
@@ -302,14 +301,16 @@ impl<'a> Component for App<'a> {
                 Err(_) => Ok(Action::Noop),
             },
             Action::ReloadFile => {
-                trace!(target:Self::ID, "Reloading file for current editor");
+                libclide::trace!("Reloading file for current editor");
                 if let Some(editor) = self.editor_tab.current_editor_mut() {
                     editor
                         .reload_contents()
                         .map(|_| Action::Handled)
                         .context("Failed to handle Action::ReloadFile")
                 } else {
-                    error!(target:Self::ID, "Failed to get current editor while handling App Action::ReloadFile");
+                    libclide::error!(
+                        "Failed to get current editor while handling App Action::ReloadFile"
+                    );
                     Ok(Action::Noop)
                 }
             }
@@ -349,7 +350,7 @@ impl<'a> Component for App<'a> {
                 kind: KeyEventKind::Press,
                 state: _state,
             } => {
-                self.change_focus(AppExplorer);
+                self.change_focus(AppComponent::Explorer);
                 Ok(Action::Handled)
             }
             KeyEvent {
@@ -358,7 +359,7 @@ impl<'a> Component for App<'a> {
                 kind: KeyEventKind::Press,
                 state: _state,
             } => {
-                self.change_focus(AppEditor);
+                self.change_focus(AppComponent::Editor);
                 Ok(Action::Handled)
             }
             KeyEvent {
@@ -367,7 +368,7 @@ impl<'a> Component for App<'a> {
                 kind: KeyEventKind::Press,
                 state: _state,
             } => {
-                self.change_focus(AppLogger);
+                self.change_focus(AppComponent::Logger);
                 Ok(Action::Handled)
             }
             KeyEvent {
@@ -376,7 +377,7 @@ impl<'a> Component for App<'a> {
                 kind: KeyEventKind::Press,
                 state: _state,
             } => {
-                self.change_focus(AppMenuBar);
+                self.change_focus(AppComponent::MenuBar);
                 Ok(Action::Handled)
             }
             KeyEvent {

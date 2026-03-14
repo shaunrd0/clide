@@ -20,25 +20,16 @@ MenuBar {
 
         ClideMenuItem {
             action: Action {
-                id: actionNewProject
-
-                text: qsTr("&New Project...")
-            }
-        }
-        ClideMenuItem {
-            action: Action {
-                id: actionOpen
-
-                text: qsTr("&Open...")
-            }
-
-            onTriggered: FileSystem.setDirectory(FileSystem.filePath)
-        }
-        ClideMenuItem {
-            action: Action {
                 id: actionSave
 
                 text: qsTr("&Save")
+            }
+        }
+        ClideMenuItem {
+            action: Action {
+                id: actionReload
+
+                text: qsTr("&Reload")
             }
         }
         MenuSeparator {
@@ -67,37 +58,9 @@ MenuBar {
 
         ClideMenuItem {
             action: Action {
-                id: actionUndo
+                id: actionCloseTab
 
-                text: qsTr("&Undo")
-            }
-        }
-        ClideMenuItem {
-            action: Action {
-                id: actionRedo
-
-                text: qsTr("&Redo")
-            }
-        }
-        ClideMenuItem {
-            action: Action {
-                id: actionCut
-
-                text: qsTr("&Cut")
-            }
-        }
-        ClideMenuItem {
-            action: Action {
-                id: actionCopy
-
-                text: qsTr("&Copy")
-            }
-        }
-        ClideMenuItem {
-            action: Action {
-                id: actionPaste
-
-                text: qsTr("&Paste")
+                text: qsTr("&Close Tab")
             }
         }
     }
@@ -132,13 +95,6 @@ MenuBar {
     ClideMenu {
         title: qsTr("&Help")
 
-        ClideMenuItem {
-            action: Action {
-                id: actionDocumentation
-
-                text: qsTr("&Documentation")
-            }
-        }
         ClideMenuItem {
             action: Action {
                 id: actionAbout

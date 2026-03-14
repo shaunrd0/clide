@@ -2,19 +2,18 @@
 //
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
+use libclide::log::Loggable;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Padding, Paragraph, Widget, Wrap};
 
+#[derive(Loggable)]
 pub struct About {}
 
 impl About {
-    #[allow(unused)]
-    pub const ID: &str = "About";
-
     pub fn new() -> Self {
-        // trace!(target:Self::id(), "Building {}", Self::id());
+        // libclide::trace!("Building {}", Self::id());
         Self {}
     }
 }
@@ -68,8 +67,8 @@ impl Widget for About {
             .map(|l| Line::from(Span::raw(*l)))
             .collect();
 
-        Clear::default().render(kilroy_rect, buf);
-        Clear::default().render(chunks[1], buf);
+        Clear.render(kilroy_rect, buf);
+        Clear.render(chunks[1], buf);
         Paragraph::new(about_lines)
             .block(
                 Block::default()

@@ -4,7 +4,6 @@
 
 use anyhow::{Context, Result, anyhow};
 use clap::Parser;
-use log::{info, trace};
 use std::process::{Command, Stdio};
 
 pub mod gui;
@@ -56,7 +55,7 @@ impl AppContext {
             // If no path was provided, use the current directory.
             None => std::env::current_dir().context("Failed to obtain current directory")?,
         };
-        info!(target:"main()", "Root path detected: {path:?}");
+        libclide::info!(target:"main()", "Root path detected: {path:?}");
 
         Ok(Self {
             path,
@@ -80,9 +79,9 @@ fn main() -> Result<()> {
         RunMode::GuiAttached => gui::run(app_context),
         RunMode::Tui => tui::run(app_context),
         RunMode::Gui => {
-            trace!(target:"main()", "Starting GUI in a new process");
+            libclide::trace!(target:"main()", "Starting GUI in a new process");
             Command::new(std::env::current_exe()?)
-                .args(&["--gui", app_context.path.to_str().unwrap()])
+                .args(["--gui", app_context.path.to_str().unwrap()])
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .stdin(Stdio::null())

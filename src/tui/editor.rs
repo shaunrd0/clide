@@ -7,7 +7,7 @@ use anyhow::{Context, Result, bail};
 use edtui::{
     EditorEventHandler, EditorState, EditorTheme, EditorView, LineNumbers, Lines, SyntaxHighlighter,
 };
-use log::{error, trace};
+use libclide::log::Loggable;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::{Alignment, Rect};
@@ -16,19 +16,18 @@ use ratatui::widgets::{Block, Borders, Padding, Widget};
 use std::path::PathBuf;
 use syntect::parsing::SyntaxSet;
 
+#[derive(Loggable)]
 pub struct Editor {
     pub state: EditorState,
     pub event_handler: EditorEventHandler,
-    pub file_path: Option<std::path::PathBuf>,
+    pub file_path: Option<PathBuf>,
     syntax_set: SyntaxSet,
     pub(crate) component_state: ComponentState,
 }
 
 impl Editor {
-    pub const ID: &str = "Editor";
-
     pub fn new(path: &std::path::Path) -> Self {
-        trace!(target:Self::ID, "Building {}", Self::ID);
+        libclide::trace!("Building {}", <Self as Loggable>::ID);
         Editor {
             state: EditorState::default(),
             event_handler: EditorEventHandler::default(),
@@ -42,10 +41,10 @@ impl Editor {
     }
 
     pub fn reload_contents(&mut self) -> Result<()> {
-        trace!(target:Self::ID, "Reloading editor file contents {:?}", self.file_path);
+        libclide::trace!("Reloading editor file contents {:?}", self.file_path);
         match self.file_path.clone() {
             None => {
-                error!(target:Self::ID, "Failed to reload editor contents with None file_path");
+                libclide::error!("Failed to reload editor contents with None file_path");
                 bail!("Failed to reload editor contents with None file_path")
             }
             Some(path) => self.set_contents(&path),
@@ -53,7 +52,7 @@ impl Editor {
     }
 
     pub fn set_contents(&mut self, path: &std::path::Path) -> Result<()> {
-        trace!(target:Self::ID, "Setting Editor contents from path {:?}", path);
+        libclide::trace!("Setting Editor contents from path {:?}", path);
         if let Ok(contents) = std::fs::read_to_string(path) {
             let lines: Vec<_> = contents
                 .lines()
@@ -69,10 +68,10 @@ impl Editor {
 
     pub fn save(&self) -> Result<()> {
         if let Some(path) = &self.file_path {
-            trace!(target:Self::ID, "Saving Editor contents {:?}", path);
+            libclide::trace!("Saving Editor contents {:?}", path);
             return std::fs::write(path, self.state.lines.to_string()).map_err(|e| e.into());
         };
-        error!(target:Self::ID, "Failed saving Editor contents; file_path was None");
+        libclide::error!("Failed saving Editor contents; file_path was None");
         bail!("File not saved. No file path set.")
     }
 }
@@ -115,9 +114,8 @@ impl Component for Editor {
     fn handle_event(&mut self, event: Event) -> Result<Action> {
         if let Some(key_event) = event.as_key_event() {
             // Handle events here that should not be passed on to the vim emulation handler.
-            match self.handle_key_events(key_event)? {
-                Action::Handled => return Ok(Action::Handled),
-                _ => {}
+            if let Action::Handled = self.handle_key_events(key_event)? {
+                return Ok(Action::Handled);
             }
         }
         self.event_handler.on_event(event, &mut self.state);

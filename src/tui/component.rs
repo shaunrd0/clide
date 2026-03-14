@@ -7,7 +7,8 @@
 use crate::tui::component::Focus::Inactive;
 use Focus::Active;
 use anyhow::Result;
-use log::trace;
+use libclide::log::Loggable;
+use libclide::theme::colors::Colors;
 use ratatui::crossterm::event::{Event, KeyEvent, MouseEvent};
 use ratatui::style::Color;
 
@@ -61,7 +62,7 @@ pub trait Component {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Loggable)]
 pub struct ComponentState {
     pub(crate) focus: Focus,
     pub(crate) vis: Visibility,
@@ -74,7 +75,7 @@ impl ComponentState {
     }
 
     fn new() -> Self {
-        trace!(target:Self::id(), "Building {}", Self::id());
+        libclide::trace!(target:Self::id(), "Building {}", Self::id());
         Self {
             focus: Active,
             vis: Visibility::Visible,
@@ -98,8 +99,8 @@ pub enum Focus {
 impl Focus {
     pub(crate) fn get_active_color(&self) -> Color {
         match self {
-            Active => Color::LightYellow,
-            Inactive => Color::White,
+            Active => Color::from_u32(Colors::css_to_u32(Colors::ACTIVE)),
+            Inactive => Color::from_u32(Colors::css_to_u32(Colors::INACTIVE)),
         }
     }
 }

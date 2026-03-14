@@ -4,34 +4,32 @@
 
 use crate::tui::component::{Action, Component, ComponentState, Focus, FocusState};
 use anyhow::{Context, Result, bail};
-use log::trace;
+use libclide::fs::entry_meta::EntryMeta;
+use libclide::log::Loggable;
 use ratatui::buffer::Buffer;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, MouseEvent, MouseEventKind};
 use ratatui::layout::{Alignment, Position, Rect};
 use ratatui::prelude::Style;
 use ratatui::style::{Color, Modifier};
 use ratatui::widgets::{Block, Borders, StatefulWidget, Widget};
-use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 
-#[derive(Debug)]
+#[derive(Debug, Loggable)]
 pub struct Explorer<'a> {
-    pub(crate) root_path: PathBuf,
+    root_path: EntryMeta,
     tree_items: TreeItem<'a, String>,
     tree_state: TreeState<String>,
     pub(crate) component_state: ComponentState,
 }
 
 impl<'a> Explorer<'a> {
-    pub const ID: &'static str = "Explorer";
-
     pub fn new(path: &PathBuf) -> Result<Self> {
-        trace!(target:Self::ID, "Building {}", Self::ID);
+        libclide::trace!("Building {}", <Self as Loggable>::ID);
         let explorer = Explorer {
-            root_path: path.to_owned(),
-            tree_items: Self::build_tree_from_path(path.to_owned())?,
+            root_path: EntryMeta::new(path)?,
+            tree_items: Self::build_tree_from_path(path)?,
             tree_state: TreeState::default(),
             component_state: ComponentState::default().with_help_text(concat!(
                 "(↑/k)/(↓/j): Select item | ←/h: Close folder | →/l: Open folder |",
@@ -41,46 +39,46 @@ impl<'a> Explorer<'a> {
         Ok(explorer)
     }
 
-    fn build_tree_from_path(path: PathBuf) -> Result<TreeItem<'static, String>> {
+    /// Builds the file tree from a path using recursion.
+    /// The identifiers used for the TreeItems are normalized. Symlinks are not resolved.
+    /// Resolving symlinks would cause collisions on the TreeItem unique identifiers within the set.
+    fn build_tree_from_path<P: AsRef<Path>>(p: P) -> Result<TreeItem<'static, String>> {
+        let path = p.as_ref();
         let mut children = vec![];
-        let clean_path = fs::canonicalize(path)?;
-        if let Ok(entries) = fs::read_dir(&clean_path) {
+        let path_meta = EntryMeta::new(path)?;
+        if let Ok(entries) = fs::read_dir(&path_meta.abs_path) {
             let mut paths = entries
                 .map(|res| res.map(|e| e.path()))
                 .collect::<Result<Vec<_>, std::io::Error>>()
                 .context(format!(
                     "Failed to build vector of paths under directory: {:?}",
-                    clean_path
+                    &path_meta.abs_path
                 ))?;
             paths.sort();
-            for path in paths {
-                if path.is_dir() {
-                    children.push(Self::build_tree_from_path(path)?);
+            for entry_path in paths {
+                let entry_meta = EntryMeta::new(&entry_path)?;
+                if entry_meta.is_dir {
+                    children.push(Self::build_tree_from_path(&entry_meta.abs_path)?);
                 } else {
-                    if let Ok(path) = fs::canonicalize(&path) {
-                        let path_str = path.to_string_lossy().to_string();
-                        children.push(TreeItem::new_leaf(
-                            path_str + uuid::Uuid::new_v4().to_string().as_str(),
-                            path.file_name()
-                                .context("Failed to get file name from path.")?
-                                .to_string_lossy()
-                                .to_string(),
-                        ));
-                    }
+                    children.push(TreeItem::new_leaf(
+                        entry_meta.abs_path.clone(),
+                        format!("{} {}", entry_meta.icon.icon, entry_meta.file_name.as_str()),
+                    ));
                 }
             }
         }
 
+        // Note: The first argument is a unique identifier, where no. 2 TreeItems may share the same.
+        // For a file tree this is fine because we shouldn't list the same object twice.
         TreeItem::new(
-            clean_path.to_string_lossy().to_string() + uuid::Uuid::new_v4().to_string().as_str(),
-            clean_path
-                .file_name()
-                .context(format!("Failed to get file name from path: {clean_path:?}"))?
-                .to_string_lossy()
-                .to_string(),
+            path_meta.abs_path.clone(),
+            format!("{} {}", path_meta.icon.icon, path_meta.file_name.as_str()),
             children,
         )
-        .context(format!("Failed to build tree from path: {clean_path:?}"))
+        .context(format!(
+            "Failed to build tree from path: {:?}",
+            path_meta.abs_path
+        ))
     }
 
     pub fn selected(&self) -> Result<String> {
@@ -96,16 +94,12 @@ impl<'a> Explorer<'a> {
 
 impl<'a> Widget for &mut Explorer<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        if let Ok(tree) = Tree::new(&self.tree_items.children()) {
-            let file_name = self
-                .root_path
-                .file_name()
-                .unwrap_or_else(|| OsStr::new("Unknown"));
+        if let Ok(tree) = Tree::new(self.tree_items.children()) {
             StatefulWidget::render(
                 tree.block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title(file_name.to_string_lossy())
+                        .title(self.root_path.file_name.clone())
                         .border_style(Style::default().fg(self.component_state.get_active_color()))
                         .title_style(Style::default().fg(Color::Green))
                         .title_alignment(Alignment::Center),
@@ -134,23 +128,21 @@ impl<'a> Component for Explorer<'a> {
                 _ => {}
             }
         }
-        if let Some(mouse_event) = event.as_mouse_event() {
-            match self.handle_mouse_events(mouse_event)? {
-                Action::Handled => return Ok(Action::Handled),
-                _ => {}
-            }
+        if let Some(mouse_event) = event.as_mouse_event()
+            && let Action::Handled = self.handle_mouse_events(mouse_event)?
+        {
+            return Ok(Action::Handled);
         }
         Ok(Action::Pass)
     }
 
     fn handle_key_events(&mut self, key: KeyEvent) -> Result<Action> {
-        if key.code == KeyCode::Enter {
-            if let Ok(selected) = self.selected() {
-                if Path::new(&selected).is_file() {
-                    return Ok(Action::OpenTab);
-                }
-            }
-            // Otherwise fall through and handle Enter in the next match case.
+        if key.code == KeyCode::Enter
+            && let Ok(selected) = self.selected()
+            && Path::new(&selected).is_file()
+        {
+            // Open a tab if the selected item is a file.
+            return Ok(Action::OpenTab);
         }
 
         let changed = match key.code {
